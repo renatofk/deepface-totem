@@ -8,8 +8,12 @@ from flask import Flask, render_template_string, Response, jsonify
 
 # Configurações
 photobase_path = "photobase"
-model_name = "ArcFace"
-threshold = 4
+# model_name = "ArcFace"
+# detector_backend = "yolov11n"
+# threshold = 3
+model_name = "Dlib"
+detector_backend = "yolov11n"
+threshold = 0.45
 
 # Carregar modelo
 print("Carregando modelo...")
@@ -20,6 +24,7 @@ print("Modelo carregado!")
 print("Carregando base de dados...")
 photo_db = []
 recognized_people = []
+distance_by_person = {}
 original_people = set()
 for person in os.listdir(photobase_path):
     person_dir = os.path.join(photobase_path, person)
@@ -28,7 +33,8 @@ for person in os.listdir(photobase_path):
         for img_name in os.listdir(person_dir):
             img_path = os.path.join(person_dir, img_name)
             try:
-                embedding = DeepFace.represent(img_path=img_path, model_name=model_name, enforce_detection=False)[0]['embedding']
+                embedding = DeepFace.represent(img_path=img_path, detector_backend=detector_backend,
+                                               anti_spoofing = True, model_name=model_name, enforce_detection=False)[0]['embedding']
                 photo_db.append((person, embedding))
             except Exception as e:
                 print(f"[!] Erro ao processar {img_path}: {e}")
@@ -47,11 +53,12 @@ recognition_confirmed = ""
 
 # Comparação
 def compare_face(face_img_path):
-    global last_detected, last_detection_time, recognition_counts, recognition_confirmed, photo_db, recognized_people
+    global last_detected, last_detection_time, recognition_counts, recognition_confirmed, photo_db, recognized_people, distance_by_person
 
     try:
         print("[*] Comparando rosto...")
-        embedding = DeepFace.represent(img_path=face_img_path, model_name=model_name, enforce_detection=False)[0]['embedding']
+        embedding = DeepFace.represent(img_path=face_img_path, detector_backend=detector_backend,
+                                        anti_spoofing = True, model_name=model_name, enforce_detection=False)[0]['embedding']
         temp_counts = {}  # Resetar contagens para esta rodada
         recognition_counts = {}
         for name, known_embedding in photo_db:
@@ -70,6 +77,7 @@ def compare_face(face_img_path):
 
                     if name not in recognized_people:
                         recognized_people.append(name)
+                        distance_by_person[name] = round(distance, 2)
                         photo_db = [(n, emb) for (n, emb) in photo_db if n != name]
                         recognition_counts = {}  # Resetar após reconhecimento confirmado
 
@@ -112,7 +120,7 @@ def gen():
                 cv2.rectangle(frame, (x, y + h + 10), (x + 300, y + h + 30), (200, 200, 200), 2)
 
             if not compare_event.is_set():
-                if face_crop is not None and face_crop.size > 0:
+                if face_crop is not None and face_crop.size > 0 and face_crop.shape[0] >= 150 and face_crop.shape[1] >= 150:
                     compare_event.set()
                     face_img_path = "temp_face.jpg"
                     if cv2.imwrite(face_img_path, face_crop):
@@ -137,11 +145,11 @@ def index():
                 <script>
                     function refreshList() {
                         $.getJSON("/status", function(data) {
-                            $('#present').html(data.recognized.map(p => `<li>${p}</li>`).join(''));
+                            $('#present').html(data.recognized.map(p => `<li>${p.nome} (distância: ${p.distancia})</li>`).join(''));
                             $('#not-recognized').html(data.not_recognized.map(p => `<li>${p}</li>`).join(''));
                         });
                     }
-                    setInterval(refreshList, 2000);
+                    setInterval(refreshList, 3000);
                 </script>
             </head>
             <body>
@@ -158,8 +166,9 @@ def index():
 @app.route('/status')
 def status():
     not_recognized_people = list(original_people - set(recognized_people))
+    recognized_with_distances = [{"nome": p, "distancia": distance_by_person.get(p, "?")} for p in recognized_people]
     return jsonify({
-        'recognized': recognized_people,
+        'recognized': recognized_with_distances,
         'not_recognized': not_recognized_people
     })
 

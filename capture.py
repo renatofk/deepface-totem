@@ -8,7 +8,7 @@ from playsound import playsound
 
 # =============== Inicializações ===============
 engine = pyttsx3.init()
-engine.setProperty('voice', 'brazil')
+engine.setProperty('voice', 'brazil')  # Voz em português
 engine.setProperty('rate', 120)  # Velocidade da fala
 
 def falar(texto):
@@ -57,7 +57,7 @@ total_fotos = 8
 
 ultimo_tempo_captura = 0
 inicio_rosto_detectado = None
-intervalo_entre_fotos = 5  # segundos
+intervalo_entre_fotos = 3  # segundos
 
 mensagem = ""
 mensagem_cor = (255, 255, 255)
