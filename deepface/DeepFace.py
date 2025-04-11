@@ -462,7 +462,7 @@ def stream(
     time_threshold: int = 5,
     frame_threshold: int = 5,
     anti_spoofing: bool = False,
-    output_path: Optional[str] = None,
+    output_path: Optional[str] = "/home/renato/Python/deepface/recognitions",
 ) -> None:
     """
     Run real time face recognition and facial attribute analysis

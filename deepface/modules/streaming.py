@@ -9,6 +9,18 @@ import numpy as np
 import pandas as pd
 import cv2
 
+import pyttsx3
+
+# Inicializa o mecanismo de fala
+tts = pyttsx3.init()
+tts.setProperty("rate", 150)  # Velocidade da fala
+
+# Função para emitir a saudação
+def greet(name):
+    print(f"Reconhecido: {name}")
+    tts.say(f"Oi {name}!")
+    tts.runAndWait()
+
 # project dependencies
 from deepface import DeepFace
 from deepface.commons.logger import Logger
@@ -261,6 +273,9 @@ def search_identity(
 
     candidate = df.iloc[0]
     target_path = candidate["identity"]
+    print(candidate)
+    person_name = target_path.split("/")[1]
+    greet(person_name)
     logger.info(f"Hello, {target_path}")
 
     # load found identity image - extracted if possible

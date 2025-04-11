@@ -18,3 +18,5 @@ benchmarks/outputs
 benchmarks/dataset
 benchmarks/lfwe
 venv
+photobase/
+photobase_bkp/
