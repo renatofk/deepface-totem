@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Reconhecimento Facial</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+        #video-container { margin-top: 20px; }
+        ul { list-style-type: none; padding: 0; }
+        .list-container { display: inline-block; margin: 20px; vertical-align: top; }
+    </style>
+</head>
+<body>
+    <h1>Reconhecimento Facial com Flask</h1>
+    <div>
+        <button onclick="startVideo()">Iniciar Detecção</button>
+        <button onclick="stopVideo()">Parar Detecção</button>
+    </div>
+
+    <div id="video-container" >
+        <img id="video-feed" src="/video_feed_detection" width="900">
+    </div>
+
+    <div class="list-container">
+        <h2>🎯 Reconhecidos</h2>
+        <ul id="recognized-list"></ul>
+    </div>
+
+    <div class="list-container">
+        <h2>❓ Não Reconhecidos</h2>
+        <ul id="not-recognized-list"></ul>
+    </div>
+
+    <script>
+        let intervalId = null;
+        
+        function startVideo() {
+            fetch('/start')
+                .then(() => {
+                    document.getElementById('video-container').style.display = 'block';
+                    const video = document.getElementById('video-feed');
+                    video.src = '/video_feed_detection?' + new Date().getTime(); // forçar reload
+                    intervalId = setInterval(updateStatus, 2000);
+                });
+        }
+        
+        function stopVideo() {
+            fetch('/stop')
+                .then(() => {
+                    document.getElementById('video-container').style.display = 'none';
+                    const video = document.getElementById('video-feed');
+                    video.src = '';
+                    clearInterval(intervalId);
+                    intervalId = null;
+                });
+        }
+        
+        function updateStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    const recognizedList = document.getElementById('recognized-list');
+                    recognizedList.innerHTML = '';
+                    data.recognized.forEach(person => {
+                        const li = document.createElement('li');
+                        li.textContent = `${person.nome} - distância: ${person.distancia} - hora: ${person.hora}`;
+                        recognizedList.appendChild(li);
+                    });
+
+                    const notRecognizedList = document.getElementById('not-recognized-list');
+                    notRecognizedList.innerHTML = '';
+                    data.not_recognized.forEach(name => {
+                        const li = document.createElement('li');
+                        li.textContent = name;
+                        notRecognizedList.appendChild(li);
+                    });
+                });
+                setInterval(refreshList, 3000);
+        }
+        
+        // Atualiza status uma vez ao carregar a página
+        updateStatus();
+    </script>
+</body>
+</html>
