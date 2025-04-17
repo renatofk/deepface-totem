@@ -1,86 +1,301 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Reconhecimento Facial</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-        button { margin: 10px; padding: 10px 20px; font-size: 16px; }
-        #video-container { margin-top: 20px; }
-        ul { list-style-type: none; padding: 0; }
-        .list-container { display: inline-block; margin: 20px; vertical-align: top; }
-    </style>
+  <meta charset="UTF-8">
+  <title>FotoNutri IA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #2E7D32;
+      --light: #D6F5D0;
+      --accent: #FF7043;
+      --neutral: #8D6E63;
+      --background: #f4f9ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background);
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 20px;
+      color: #333;
+    }
+
+    header {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+
+    header img {
+      height: 80px;
+      border-radius: 12px;
+    }
+
+    header h1 {
+      font-size: 24px;
+      color: var(--primary);
+    }
+
+    .column {
+      flex: 1 1 100%;
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      min-width: 280px;
+    }
+
+    h2 {
+      color: var(--primary);
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 5px;
+      margin-bottom: 15px;
+    }
+
+    img {
+      border-radius: 8px;
+      max-width: 100%;
+      border: 2px solid #ddd;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 10px 0;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    li {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      transition: background 0.3s ease;
+    }
+
+    li:last-child {
+      border-bottom: none;
+    }
+
+    li:hover {
+      background: var(--light);
+      cursor: pointer;
+    }
+
+    li.selected {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    button {
+        padding: 20px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 6px;
+        background-color: var(--primary);
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    button:hover {
+        background-color: var(--accent);
+    }
+
+    p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: var(--neutral);
+    }
+
+    #video-container {
+      margin-bottom: 15px;
+    }
+
+    @media (min-width: 768px) {
+      body {
+        flex-direction: row;
+      }
+
+      .column {
+        flex: 1 1 calc(50% - 20px);
+      }
+    }
+    #video-section {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+#info-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  width: 100%;
+}
+
+#info-section .column {
+  flex: 1 1 calc(50% - 10px);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  #info-section {
+    flex-direction: column;
+  }
+
+  #info-section .column {
+    flex: 1 1 100%;
+  }
+}
+
+  </style>
 </head>
 <body>
-    <h1>Reconhecimento Facial com Flask</h1>
-    <div>
-        <button onclick="startVideo()">Iniciar Detecção</button>
-        <button onclick="stopVideo()">Parar Detecção</button>
-    </div>
-
-    <div id="video-container" >
-        <img id="video-feed" src="/video_feed_detection" width="900">
-    </div>
-
-    <div class="list-container">
-        <h2>🎯 Reconhecidos</h2>
-        <ul id="recognized-list"></ul>
-    </div>
-
-    <div class="list-container">
-        <h2>❓ Não Reconhecidos</h2>
-        <ul id="not-recognized-list"></ul>
-    </div>
-
-    <script>
-        let intervalId = null;
+    <header>
+      <img src="/static/logo_fotonutri.webp" alt="Logo FotoNutri IA">
+    </header>
+  
+    <div id="video-section">
+      <div class="column full-width">
+        <div id="video-container">
+          <img id="video-feed" src="/video_feed_detection" width="100%">
+        </div>
+        <!-- <p>Pressione "Iniciar Detecção" para começar a capturar imagens.</p>
+        <p>Pressione "Finalizar Detecção" para parar a captura.</p>
+        <p>Selecione um nome da lista de não reconhecidos para marcar presença manualmente.</p> -->
+        <div style="text-align: center;">
+            <button onclick="startDetection()">Iniciar Detecção</button>
+            <button onclick="stopDetection()">Finalizar Detecção</button>
+            <button onclick="reload_embeddings()">Atualizar Base de Fotos e Camera</button>
+        </div>
         
-        function startVideo() {
-            fetch('/start')
-                .then(() => {
-                    document.getElementById('video-container').style.display = 'block';
-                    const video = document.getElementById('video-feed');
-                    video.src = '/video_feed_detection?' + new Date().getTime(); // forçar reload
-                    intervalId = setInterval(updateStatus, 2000);
-                });
+      </div>
+    </div>
+  
+    <div id="info-section">
+      <div class="column">
+        <h2>Cadastrados</h2>
+        <ul id="notRecognizedList" onclick="selectName(event, 'notRecognizedList')"></ul>
+        <button onclick="markManualPresence()">Marcar Presença Manual</button>
+      </div>
+  
+      <div class="column">
+        <h2>Presenças</h2>
+        <ul id="recognizedList" onclick="selectName(event, 'recognizedList')"></ul>
+        <button onclick="unmarkManualPresence()">Desmarcar Presença</button>
+      </div>
+    </div>
+
+  <script>
+    let selectedName = null;
+    let intervalId = null;
+
+    function fetchStatus() {
+      fetch('/status').then(res => res.json()).then(data => {
+        const notList = document.getElementById("notRecognizedList");
+        const recList = document.getElementById("recognizedList");
+        notList.innerHTML = "";
+        recList.innerHTML = "";
+
+        data.not_recognized.forEach(name => {
+          const li = document.createElement("li");
+          li.textContent = name;
+          notList.appendChild(li);
+        });
+
+        data.recognized.forEach(person => {
+          const li = document.createElement("li");
+          li.textContent = `${person.nome} (dist: ${person.distancia}, hora: ${person.hora})`;
+          recList.appendChild(li);
+        });
+      });
+    }
+
+    function startDetection() {
+      fetch('/start').then(() => {
+        console.log("Detecção iniciada.");
+        
+        document.getElementById('video-container').style.display = 'block';
+        const video = document.getElementById('video-feed');
+        video.src = '/video_feed_detection?' + new Date().getTime(); // forçar reload
+        intervalId = setInterval(fetchStatus, 2000);
+                
+      });
+    }
+
+    function stopDetection() {
+      fetch('/stop').then(() => {
+        console.log("Detecção parada.");
+        document.getElementById('video-container').style.display = 'none';
+        const video = document.getElementById('video-feed');
+        video.src = '';
+        clearInterval(intervalId);
+        intervalId = null;
+      });
+    }
+
+    function selectName(event, listId) {
+      const list = document.getElementById(listId);
+      [...list.children].forEach(li => li.classList.remove("selected"));
+      event.target.classList.add("selected");
+      selectedName = event.target.textContent;
+    }
+
+    function markManualPresence() {
+      if (!selectedName) return alert("Selecione um nome da lista!");
+      fetch('/manual_mark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: selectedName })
+      }).then(() => {
+        selectedName = null;
+        fetchStatus();
+      });
+    }
+
+    function unmarkManualPresence() {
+      if (!selectedName) return alert("Selecione um nome da lista!");
+      fetch('/manual_unmark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: selectedName })
+      }).then(() => {
+        selectedName = null;
+        fetchStatus();
+      });
+    }
+
+    function reload_embeddings() {
+        if (confirm("Tem certeza que deseja atualizar a base de fotos? ")) {
+            fetch('/reload_embeddings', { method: 'POST' })
+            .then(() => alert("Base de fotos atualizada com sucesso."))
+            .catch(err => alert("Erro ao atualizar a base de fotos."));
         }
-        
-        function stopVideo() {
-            fetch('/stop')
-                .then(() => {
-                    document.getElementById('video-container').style.display = 'none';
-                    const video = document.getElementById('video-feed');
-                    video.src = '';
-                    clearInterval(intervalId);
-                    intervalId = null;
-                });
-        }
-        
-        function updateStatus() {
-            fetch('/status')
-                .then(response => response.json())
-                .then(data => {
-                    const recognizedList = document.getElementById('recognized-list');
-                    recognizedList.innerHTML = '';
-                    data.recognized.forEach(person => {
-                        const li = document.createElement('li');
-                        li.textContent = `${person.nome} - distância: ${person.distancia} - hora: ${person.hora}`;
-                        recognizedList.appendChild(li);
-                    });
+    }
 
-                    const notRecognizedList = document.getElementById('not-recognized-list');
-                    notRecognizedList.innerHTML = '';
-                    data.not_recognized.forEach(name => {
-                        const li = document.createElement('li');
-                        li.textContent = name;
-                        notRecognizedList.appendChild(li);
-                    });
-                });
-                setInterval(refreshList, 3000);
-        }
-        
-        // Atualiza status uma vez ao carregar a página
-        updateStatus();
-    </script>
+    fetchStatus()
+  </script>
 </body>
 </html>

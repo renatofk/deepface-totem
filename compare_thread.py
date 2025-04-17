@@ -6,6 +6,7 @@ import threading
 import time
 from flask import Flask, render_template_string, Response, jsonify, request, render_template
 from datetime import datetime
+import re
 
 # Configurações
 photobase_path = "photobase"
@@ -19,39 +20,51 @@ threshold = 0.45
 print("Carregando modelo...")
 model = DeepFace.build_model(model_name)
 print("Modelo carregado!")
-
-# Carregar embeddings
-print("Carregando base de dados...")
 photo_db = []
 recognized_people = []
 distance_by_person = {}
 time_by_person = {}
 original_people = set()
-for person in os.listdir(photobase_path):
-    person_dir = os.path.join(photobase_path, person)
-    if os.path.isdir(person_dir):
-        original_people.add(person)
-        for img_name in os.listdir(person_dir):
-            img_path = os.path.join(person_dir, img_name)
-            try:
-                embedding = DeepFace.represent(img_path=img_path, model_name=model_name, enforce_detection=False)[0]['embedding']
-                photo_db.append((person, embedding))
-            except Exception as e:
-                print(f"[!] Erro ao processar {img_path}: {e}")
-print("Base de dados carregada!")
+video_capture = None
+
+def load_embeddings():
+    global photo_db, original_people, video_capture
+    # Carregar embeddings
+    print("Carregando base de dados...")
+    photo_db = []
+    original_people = set()
+    for person in os.listdir(photobase_path):
+        person_dir = os.path.join(photobase_path, person)
+        if os.path.isdir(person_dir):
+            original_people.add(person)
+            for img_name in os.listdir(person_dir):
+                img_path = os.path.join(person_dir, img_name)
+                try:
+                    embedding = DeepFace.represent(img_path=img_path, model_name=model_name, enforce_detection=False)[0]['embedding']
+                    photo_db.append((person, embedding))
+                except Exception as e:
+                    print(f"[!] Erro ao processar {img_path}: {e}")
+    print("Base de dados carregada!")
+
+    # Configuração do vídeo
+    print("Iniciando camera...")
+    # video_capture = cv2.VideoCapture(0)
+    video_capture = cv2.VideoCapture("rtsp://192.168.0.16:1919/h264.sdp", cv2.CAP_FFMPEG)
+    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
+    print("Resolução atual:",
+      video_capture.get(cv2.CAP_PROP_FRAME_WIDTH),
+      "x",
+      video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+load_embeddings()
 
 # Inicializações
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 app = Flask(__name__)
-video_capture = cv2.VideoCapture(0)
-video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-detection_running = False
 
-print("Resolução atual:",
-      video_capture.get(cv2.CAP_PROP_FRAME_WIDTH),
-      "x",
-      video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+detection_running = False
 
 compare_event = threading.Event()
 last_detected = ""
@@ -171,6 +184,33 @@ def start():
 def stop():
     global detection_running
     detection_running = False
+    return "OK"
+
+@app.route('/manual_mark', methods=['POST'])
+def manual_mark():
+    name = request.json.get("name")
+    if name and name not in recognized_people:
+        recognized_people.append(name)
+        distance_by_person[name] = "manual"
+        time_by_person[name] = time.strftime('%H:%M:%S')
+    return "OK"
+
+@app.route('/manual_unmark', methods=['POST'])
+def manual_unmark():
+    name = request.json.get("name")
+    print(f"Unmarking {name}")
+    match = re.match(r'^(.+?)\s+\(dist:', name)
+    if match:
+        name = match.group(1)
+        print(name)  # Output: Renato
+    if name and name in recognized_people:
+        print(f"Removing {name} from recognized_people")
+        recognized_people.remove(name)
+    return "OK"
+
+@app.route('/reload_embeddings', methods=['POST'])
+def reload_embeddings():
+    load_embeddings()
     return "OK"
 
 if __name__ == '__main__':
