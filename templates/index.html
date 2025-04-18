@@ -205,6 +205,7 @@
         <h2>Presenças</h2>
         <ul id="recognizedList" onclick="selectName(event, 'recognizedList')"></ul>
         <button onclick="unmarkManualPresence()">Desmarcar Presença</button>
+        <button onclick="savePresenceList()">Salvar lista de presença</button>
       </div>
     </div>
 
@@ -294,6 +295,86 @@
             .catch(err => alert("Erro ao atualizar a base de fotos."));
         }
     }
+
+    function savePresenceList() {
+        const recognizedList = document.getElementById('recognizedList');
+        const itens = recognizedList.getElementsByTagName('li');
+
+        const presencas = Array.from(itens).map(li => {
+            const text = li.textContent.trim();
+            const id = text.split("-")[0].trim();
+
+            const nameMatch = text.match(/^(.+?)\s+\(dist:/);
+            const horaMatch = text.match(/hora:\s*([\d:]+)/);
+
+            return {
+                student_id: parseInt(id),
+                name: nameMatch ? nameMatch[1] : '',
+                datetime: horaMatch ? gerarDataCompleta(horaMatch[1]) : new Date().toISOString()
+            };
+        });
+
+        fetch('http://127.0.0.1:8000/api/registrar-presencas/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        mode: "no-cors", // NÃO RECOMENDADO PARA PRODUÇÃO
+        body: JSON.stringify(presencas)
+        })
+        .then(resp => {
+        if (!resp.ok) throw new Error("Erro ao salvar presença");
+        return resp.json();
+        })
+        .then(respJson => {
+        alert("Presenças salvas com sucesso!");
+        console.log(respJson);
+        })
+        .catch(err => {
+        console.error(err);
+        alert(JSON.stringify(presencas));
+        });
+    }
+
+    function gerarDataCompleta(hora) {
+  const [h, m, s] = hora.split(":");
+
+  // Cria uma data base em UTC
+  const agora = new Date();
+
+  // Ajusta a hora fornecida
+  const dataLocal = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  dataLocal.setHours(parseInt(h));
+  dataLocal.setMinutes(parseInt(m));
+  dataLocal.setSeconds(parseInt(s || "0"));
+
+  // Converte de volta para ISO, mas mantendo o fuso de São Paulo
+  const year = dataLocal.getFullYear();
+  const month = String(dataLocal.getMonth() + 1).padStart(2, '0');
+  const day = String(dataLocal.getDate()).padStart(2, '0');
+  const hours = String(dataLocal.getHours()).padStart(2, '0');
+  const minutes = String(dataLocal.getMinutes()).padStart(2, '0');
+  const seconds = String(dataLocal.getSeconds()).padStart(2, '0');
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+}
+
+    function getFormattedDate() {
+    const date = new Date();
+
+    // Converte para o horário de São Paulo
+    const saoPauloDate = new Date(date.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+
+    // Formata para "YYYY-MM-DDTHH:MM:00" (sem milissegundos)
+    const year = saoPauloDate.getFullYear();
+    const month = String(saoPauloDate.getMonth() + 1).padStart(2, '0');
+    const day = String(saoPauloDate.getDate()).padStart(2, '0');
+    const hours = String(saoPauloDate.getHours()).padStart(2, '0');
+    const minutes = String(saoPauloDate.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:00`;
+    }
+
 
     fetchStatus()
   </script>

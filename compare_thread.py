@@ -36,8 +36,14 @@ def load_embeddings():
     for person in os.listdir(photobase_path):
         person_dir = os.path.join(photobase_path, person)
         if os.path.isdir(person_dir):
-            original_people.add(person)
-            for img_name in os.listdir(person_dir):
+            #original_people.add(person)
+            #print(original_people)
+            for idx, img_name in enumerate(os.listdir(person_dir)):
+                if idx == 0:
+                    student_id = int(img_name.split("_")[0])
+                    student = str(student_id) + "-" + person
+                    original_people.add(student)
+                    print(original_people)
                 img_path = os.path.join(person_dir, img_name)
                 try:
                     embedding = DeepFace.represent(img_path=img_path, model_name=model_name, enforce_detection=False)[0]['embedding']
