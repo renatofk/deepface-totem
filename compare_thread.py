@@ -36,8 +36,6 @@ def load_embeddings():
     for person in os.listdir(photobase_path):
         person_dir = os.path.join(photobase_path, person)
         if os.path.isdir(person_dir):
-            #original_people.add(person)
-            #print(original_people)
             for idx, img_name in enumerate(os.listdir(person_dir)):
                 if idx == 0:
                     student_id = int(img_name.split("_")[0])
@@ -47,15 +45,15 @@ def load_embeddings():
                 img_path = os.path.join(person_dir, img_name)
                 try:
                     embedding = DeepFace.represent(img_path=img_path, model_name=model_name, enforce_detection=False)[0]['embedding']
-                    photo_db.append((person, embedding))
+                    photo_db.append((student, embedding))
                 except Exception as e:
                     print(f"[!] Erro ao processar {img_path}: {e}")
     print("Base de dados carregada!")
 
     # Configuração do vídeo
     print("Iniciando camera...")
-    # video_capture = cv2.VideoCapture(0)
-    video_capture = cv2.VideoCapture("rtsp://192.168.0.16:1919/h264.sdp", cv2.CAP_FFMPEG)
+    video_capture = cv2.VideoCapture(0)
+    # video_capture = cv2.VideoCapture("rtsp://192.168.0.16:1919/h264.sdp", cv2.CAP_FFMPEG)
     video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
@@ -106,11 +104,15 @@ def compare_face(face_img_path):
                         time_by_person[name] = datetime.now().strftime("%H:%M:%S")
                         photo_db = [(n, emb) for (n, emb) in photo_db if n != name]
                         recognition_counts = {}
-
-                        historico_path = "historico"
+                        # Save recognized face in history folder
+                        historico_path = "history"
                         os.makedirs(historico_path, exist_ok=True)
                         save_path = os.path.join(historico_path, f"{name}.jpg")
                         cv2.imwrite(save_path, cv2.imread(face_img_path))
+                        # remove the name from photo_db after processing
+                        for (n, emb) in photo_db:
+                            if n == name:
+                                photo_db.remove((n, emb))
 
                 return
         print("[x] Rosto não reconhecido.")

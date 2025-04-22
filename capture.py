@@ -99,14 +99,20 @@ def desenhar_barra_progresso(frame, progresso, total):
     cv2.rectangle(frame, (x, y), (x + preenchimento, y + altura), (0, 255, 0), -1)
 
 def generate_frames(student_id, student_name):
-    global ultima_foto, inicio_rosto_detectado, ultimo_tempo_captura, mensagem, mensagem_cor
+    global ultima_foto, inicio_rosto_detectado, ultimo_tempo_captura, mensagem, mensagem_cor, captura_finalizada
+
     captura_finalizada = False
     foto_count = 0
     user_path = os.path.join("photobase", student_name)
     os.makedirs(user_path, exist_ok=True)
 
-    texto = "Aguardando rosto..."
-    cor = (0, 255, 255)
+    if captura_finalizada:
+        texto = "Captura finalizada"
+        cor = (0, 255, 0)
+
+    else:
+        texto = "Aguardando rosto..."
+        cor = (0, 255, 255)
     
     cap = cv2.VideoCapture(0)
     while True:
@@ -129,11 +135,11 @@ def generate_frames(student_id, student_name):
                     if not esta_clara(face_crop):
                         mensagem = "[X] Imagem escura. Melhore a claridade"
                         mensagem_cor = (0, 0, 255)
-                        falar("Imagem escura. Melhore a claridade")
-                    if not esta_nitida(face_crop):
-                        mensagem = "[X] Imagem borrada. Mantenha o rosto firme."
+                        falar("Imagem escura")
+                    elif not esta_nitida(face_crop):
+                        mensagem = "[X] Imagem borrada. Mantenha o rosto firme e repita a foto."
                         mensagem_cor = (0, 0, 255)
-                        falar("Imagem borrada. Repita a foto.")
+                        falar("Imagem borrada")
                     else:
                         foto_path = os.path.join(user_path, f"{str(student_id)}_{foto_count}.jpg")
                         thread = Thread(target=salvar_foto_em_thread, args=(face_crop.copy(), foto_path, foto_count))

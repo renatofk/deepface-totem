@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>FotoNutri IA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+
   <style>
     :root {
       --primary: #2E7D32;
@@ -119,6 +121,11 @@
     button:hover {
         background-color: var(--accent);
     }
+    button:disabled {
+      background-color: #999; 
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
 
     p {
       margin: 5px 0;
@@ -174,7 +181,7 @@
 </head>
 <body>
     <header>
-      <img src="/static/logo_fotonutri.webp" alt="Logo FotoNutri IA">
+      <img src="/static/logo_fotonutri.jpg" alt="Logo FotoNutri IA">
     </header>
   
     <div id="video-section">
@@ -186,8 +193,8 @@
         <p>Pressione "Finalizar Detecção" para parar a captura.</p>
         <p>Selecione um nome da lista de não reconhecidos para marcar presença manualmente.</p> -->
         <div style="text-align: center;">
-            <button onclick="startDetection()">Iniciar Detecção</button>
-            <button onclick="stopDetection()">Finalizar Detecção</button>
+            <button id="btnStart" onclick="startDetection()">Iniciar Detecção</button>
+            <button id="btnStop" onclick="stopDetection()" disabled>Finalizar Detecção</button>
             <button onclick="reload_embeddings()">Atualizar Base de Fotos e Camera</button>
         </div>
         
@@ -242,7 +249,8 @@
         const video = document.getElementById('video-feed');
         video.src = '/video_feed_detection?' + new Date().getTime(); // forçar reload
         intervalId = setInterval(fetchStatus, 2000);
-                
+        document.getElementById("btnStart").disabled = true;
+        document.getElementById("btnStop").disabled = false;
       });
     }
 
@@ -254,6 +262,8 @@
         video.src = '';
         clearInterval(intervalId);
         intervalId = null;
+        document.getElementById("btnStart").disabled = false;
+        document.getElementById("btnStop").disabled = true;
       });
     }
 
