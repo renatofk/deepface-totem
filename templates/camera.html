@@ -1,11 +1,110 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Captura em andamento...</title>
+<meta charset="UTF-8">
+<title>Crop central + BlazeFace 800x800</title>
+<style>
+  canvas { border:1px solid black; }
+</style>
 </head>
-<body style="text-align: center;font-family: system-ui;color:#2e7d32">
-    <h2 style="margin: 30px;">Captura para {{ student_name }}</h2>
-    <img src="/video_feed?student_id={{student_id}}&student_name={{student_name}}" width="800" height="600">
+<body>
+
+    <video id="video" playsinline style="display: none;"></video>
+    <div style="position: relative; width: 800px; height: 800px;">
+      <canvas id="canvas" width="800" height="800" style="position: absolute; top: 0; left: 0; z-index: 1;"></canvas>
+      <canvas id="overlay" width="800" height="800" style="position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none;"></canvas>
+    </div>
+    
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.16.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface"></script>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const overlay = document.getElementById('overlay');
+const ctxOverlay = overlay.getContext('2d');
+
+let model;
+
+async function setupCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: "user" },
+    audio: false
+  });
+  video.srcObject = stream;
+  return new Promise((resolve) => {
+    video.onloadedmetadata = () => resolve(video);
+  });
+}
+
+async function main() {
+  await setupCamera();
+  video.play();
+  model = await blazeface.load();
+  requestAnimationFrame(processFrame);
+}
+
+let lastPredictions = [];
+let noFaceCounter = 0;
+const NO_FACE_THRESHOLD = 5; // Espera 5 frames sem face antes de limpar
+
+async function processFrame() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const vidW = video.videoWidth;
+  const vidH = video.videoHeight;
+  const cropSize = 800;
+  const cropX = (vidW - cropSize) / 2;
+  const cropY = (vidH - cropSize) / 2;
+
+  ctx.save();
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, cropX, cropY, cropSize, cropSize, 0, 0, canvas.width, canvas.height);
+  ctx.restore();
+
+  const inputTensor = tf.browser.fromPixels(canvas);
+  const predictions = await model.estimateFaces(inputTensor, false);
+  inputTensor.dispose();
+
+  if (predictions.length > 0) {
+    lastPredictions = predictions;
+    noFaceCounter = 0;
+  } else {
+    noFaceCounter++;
+  }
+
+  ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
+
+  if (lastPredictions.length > 0 && noFaceCounter < NO_FACE_THRESHOLD) {
+    lastPredictions.forEach(pred => {
+      const [x1, y1] = pred.topLeft;
+      const [x2, y2] = pred.bottomRight;
+      const flippedX1 = canvas.width - x2;
+      const flippedX2 = canvas.width - x1;
+      //const boxW = flippedX2 - flippedX1;
+      const boxW = x2 - x1;
+      const boxH = y2 - y1;
+
+      ctxOverlay.strokeStyle = 'lime';
+      ctxOverlay.lineWidth = 3;
+      ctxOverlay.strokeRect(x1, y1, boxW, boxH);
+      ctxOverlay.font = "16px Arial";
+      ctxOverlay.fillStyle = "lime";
+      ctxOverlay.fillText("Face", x1, y1 - 5);
+    });
+  }
+
+  requestAnimationFrame(processFrame);
+}
+
+main();
+
+
+</script>
+
 </body>
 </html>
