@@ -1,19 +1,66 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Crop central + BlazeFace 800x800</title>
-<style>
-  canvas { border:1px solid black; }
-</style>
-</head>
-<body>
+  <meta charset="UTF-8">
+<title>Captura</title>
+  <style>
+        canvas {
+          border: 2px solid #2e7d32;
+          border-radius: 10px;
+          
+        }
+        #status {
+            margin: 20px;
+            font-size: 1.2em;
+            color: #2e7d32;
+        }
+        #progressBar {
+            width: 80%;
+            height: 20px;
+            background-color: #ccc;
+            border-radius: 10px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        #progress {
+            height: 100%;
+            width: 0%;
+            background-color: #2e7d32;
+            transition: width 0.1s;
+        }
+        #startBtn {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background-color: #2e7d32;
+          color: white;
+          padding: 20px;
+          border: none;
+          border-radius: 4px;
+          font-size: 18px;
+          cursor: pointer;
+          z-index: 10;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      }
 
+      #startBtn:hover {
+          background-color: #1b5e20;
+      }
+  </style>
+</head>
+<body style="text-align: center;font-family: system-ui;color:#2e7d32">
+    <h2 style="margin: 30px;">Captura para {{ student_name }}</h2>
+    
     <video id="video" playsinline style="display: none;"></video>
-    <div style="position: relative; width: 800px; height: 800px;">
+    <div style="position: relative; width: 800px; height: 800px; margin: auto;">
       <canvas id="canvas" width="800" height="800" style="position: absolute; top: 0; left: 0; z-index: 1;"></canvas>
       <canvas id="overlay" width="800" height="800" style="position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none;"></canvas>
+      <button id="startBtn">Iniciar Captura</button>
     </div>
+
+
+    <div id="progressBar"><div id="progress"></div></div>
     
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.16.0"></script>
@@ -23,15 +70,59 @@
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-
 const overlay = document.getElementById('overlay');
 const ctxOverlay = overlay.getContext('2d');
 
 let model;
 
+// Adicione no topo
+let positionTimers = { 'Frente': 0, 'Esquerda': 0, 'Direita': 0 };
+const HOLD_DURATION = 1000; // 1 segundo em ms
+let lastCaptured = { 'Frente': false, 'Esquerda': false, 'Direita': false };
+
+// Parâmetros fixos do estudante (ou preencha de algum form)
+const studentId = '5';
+const studentName = 'Renato';
+
+// Função para capturar a região e enviar
+function captureAndSend(position, box) {
+  const [x1, y1, x2, y2] = box;
+  const width = x2 - x1;
+  const height = y2 - y1;
+
+  // Cria um canvas temporário para recortar a região da face
+  const faceCanvas = document.createElement('canvas');
+  faceCanvas.width = width;
+  faceCanvas.height = height;
+  const faceCtx = faceCanvas.getContext('2d');
+
+  faceCtx.drawImage(canvas, x1, y1, width, height, 0, 0, width, height);
+  const imageData = faceCanvas.toDataURL('image/jpeg');
+
+  fetch('http://localhost:5003/process_frame', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      image: imageData,
+      student_id: studentId,
+      student_name: studentName,
+      position: position
+    })
+  }).then(res => {
+    console.log(`Foto ${position} enviada com sucesso!`);
+  }).catch(err => {
+    console.error('Erro ao enviar:', err);
+  });
+}
+
+
 async function setupCamera() {
   const stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: "user" },
+    video: { 
+        width: { ideal: 1280 }, // Largura menor que altura
+        height: { ideal: 800 }, // Altura maior
+        facingMode: "user" 
+    },
     audio: false
   });
   video.srcObject = stream;
@@ -57,6 +148,7 @@ async function processFrame() {
   const vidW = video.videoWidth;
   const vidH = video.videoHeight;
   const cropSize = 800;
+
   const cropX = (vidW - cropSize) / 2;
   const cropY = (vidH - cropSize) / 2;
 
@@ -83,27 +175,97 @@ async function processFrame() {
     lastPredictions.forEach(pred => {
       const [x1, y1] = pred.topLeft;
       const [x2, y2] = pred.bottomRight;
-      const flippedX1 = canvas.width - x2;
-      const flippedX2 = canvas.width - x1;
-      //const boxW = flippedX2 - flippedX1;
       const boxW = x2 - x1;
       const boxH = y2 - y1;
 
-      ctxOverlay.strokeStyle = 'lime';
+      if (boxW < 300) {
+        ctxOverlay.fillStyle = 'yellow';
+        ctxOverlay.font = "30px Arial";
+        ctxOverlay.fillText("Aproxime-se da câmera", x1, y1 - 5);
+        return;
+      } 
+      if (boxW > 400) {
+        ctxOverlay.fillStyle = 'yellow';
+        ctxOverlay.font = "30px Arial";
+        ctxOverlay.fillText("Afaste-se um pouco", x1, y1 - 5);
+        return;
+      } 
+    
+      // BlazeFace retorna landmarks (6 pontos):
+      // [ right eye, left eye, nose, mouth right, mouth left, mouth center ]
+      const landmarks = pred.landmarks;
+      const rightEye = landmarks[0];
+      const leftEye = landmarks[1];
+      const nose = landmarks[2];
+
+      const eyeCenterX = (rightEye[0] + leftEye[0]) / 2;
+      const noseX = nose[0];
+
+      const offset = noseX - eyeCenterX;
+
+      let boxColor = 'red';
+      let position = '';
+
+      if (offset < -15 && offset > -40) {
+        boxColor = 'orange'; // Olhando esquerda
+        position = 'Esquerda';
+      } else if (offset > 15 && offset < 40) {
+        boxColor = 'blue'; // Olhando direita
+        position = 'Direita';
+      } else if (offset < 10 && offset > -10) {
+        boxColor = 'lime'; // Centro
+        position = 'Frente';
+      }
+
+      ctxOverlay.strokeStyle = boxColor;
       ctxOverlay.lineWidth = 3;
       ctxOverlay.strokeRect(x1, y1, boxW, boxH);
-      ctxOverlay.font = "16px Arial";
-      ctxOverlay.fillStyle = "lime";
-      ctxOverlay.fillText("Face", x1, y1 - 5);
+      ctxOverlay.font = "30px Arial";
+      ctxOverlay.fillStyle = boxColor;
+      ctxOverlay.fillText(position, x1, y1 - 5);
+
+      const now = Date.now();
+
+        ['Frente', 'Esquerda', 'Direita'].forEach(pos => {
+        if (pos === position) {
+            if (positionTimers[pos] === 0) {
+            positionTimers[pos] = now; // Inicia o timer
+            drawProgressBar(x1, y1, boxW, 0.1, "green"); // Inicia a barra de progresso
+            } else {
+            const elapsed = now - positionTimers[pos];
+            if (elapsed >= HOLD_DURATION && !lastCaptured[pos]) {
+                console.log(`Capturando ${pos}...`);
+                captureAndSend(pos, [x1, y1, x2, y2]);
+                lastCaptured[pos] = true; // Marca que já capturou
+            }
+            }
+        } else {
+            positionTimers[pos] = 0; // Reseta se mudou de posição
+        }
+        });
     });
   }
 
   requestAnimationFrame(processFrame);
 }
 
-main();
+function drawProgressBar(x, y, width, progress, color) {
+  const barWidth = width;
+  const barHeight = 10;
+  const progressWidth = barWidth * progress;
+
+  ctxOverlay.fillStyle = 'gray';
+  ctxOverlay.fillRect(x, y + 5, barWidth, barHeight);
+
+  ctxOverlay.fillStyle = color;
+  ctxOverlay.fillRect(x, y + 5, progressWidth, barHeight);
+}
 
 
+document.getElementById('startBtn').addEventListener('click', () => {
+    document.getElementById('startBtn').style.display = 'none';
+    main();
+});
 </script>
 
 </body>
