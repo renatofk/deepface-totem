@@ -179,15 +179,15 @@ async function processFrame() {
       const boxH = y2 - y1;
 
       if (boxW < 300) {
-        ctxOverlay.fillStyle = 'yellow';
-        ctxOverlay.font = "30px Arial";
-        ctxOverlay.fillText("Aproxime-se da câmera", x1, y1 - 5);
+        ctxOverlay.fillStyle = 'red';
+        ctxOverlay.font = "34px Arial";
+        ctxOverlay.fillText("Aproxime-se da câmera", x1, y1 - 10);
         return;
       } 
       if (boxW > 400) {
-        ctxOverlay.fillStyle = 'yellow';
-        ctxOverlay.font = "30px Arial";
-        ctxOverlay.fillText("Afaste-se um pouco", x1, y1 - 5);
+        ctxOverlay.fillStyle = 'red';
+        ctxOverlay.font = "34px Arial";
+        ctxOverlay.fillText("Afaste-se um pouco", x1, y1 - 10);
         return;
       } 
     
@@ -206,13 +206,13 @@ async function processFrame() {
       let boxColor = 'red';
       let position = '';
 
-      if (offset < -15 && offset > -40) {
+      if (offset < -45 && offset > -70) {
         boxColor = 'orange'; // Olhando esquerda
         position = 'Esquerda';
       } else if (offset > 15 && offset < 40) {
         boxColor = 'blue'; // Olhando direita
         position = 'Direita';
-      } else if (offset < 10 && offset > -10) {
+      } else if (offset < 10 && offset > -40) {
         boxColor = 'lime'; // Centro
         position = 'Frente';
       }
@@ -230,7 +230,7 @@ async function processFrame() {
         if (pos === position) {
             if (positionTimers[pos] === 0) {
             positionTimers[pos] = now; // Inicia o timer
-            drawProgressBar(x1, y1, boxW, 0.1, "green"); // Inicia a barra de progresso
+            drawProgressBar(x1, y1, boxW, 0.5, "green"); // Inicia a barra de progresso
             } else {
             const elapsed = now - positionTimers[pos];
             if (elapsed >= HOLD_DURATION && !lastCaptured[pos]) {

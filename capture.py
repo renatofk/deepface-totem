@@ -8,6 +8,7 @@ import pyttsx3
 from playsound import playsound
 import threading
 import queue
+import base64
 
 app = Flask(__name__)
 engine = pyttsx3.init()
@@ -68,8 +69,8 @@ def falar(texto):
 
 def salvar_foto_em_thread(img, path, index):
     cv2.imwrite(path, img)
-    playsound("camera-click.mp3")
-    falar(f"Foto {index + 1} salva.")
+    # playsound("camera-click.mp3")
+    # falar(f"Foto {index + 1} salva.")
 
 def esta_clara(img, limiar=100):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -227,8 +228,70 @@ def video_feed():
 def status():
     return jsonify({'finalizado': captura_finalizada})
 
+@app.route('/upload_photo', methods=['POST'])
+def upload_photo():
+    data = request.get_json()
+    image_data = data['image'].split(',')[1]  # Remove o cabeçalho base64
+    student_name = data['student_name']
+    student_id = data['student_id']
+    
+    folder_path = os.path.join("photobase", student_name)
+    os.makedirs(folder_path, exist_ok=True)
+
+    foto_path = os.path.join(user_path, f"{str(student_id)}_{foto_count}.jpg")
+    thread = Thread(target=salvar_foto_em_thread, args=(face_crop.copy(), foto_path, foto_count))
+    thread.start()
+    threads.append(thread)
+
+    # Salva imagem
+    foto_path = os.path.join(folder_path, f"{student_id}_{int(time.time())}.jpg")
+    with open(foto_path, 'wb') as f:
+        f.write(base64.b64decode(image_data))
+
+    return jsonify({"message": "Foto salva com sucesso"})
+
+@app.route('/process_frame', methods=['POST'])
+def process_frame():
+    data = request.json
+    image_data = data['image']
+    student_id = data['student_id']
+    student_name = data['student_name']
+    position = data['position']
+    print(f"Recebendo imagem para o aluno {student_name} com ID {student_id} e foto {position}")
+    # Cria o diretório se não existir
+    folder_path = os.path.join("photobase", student_name)
+    os.makedirs(folder_path, exist_ok=True)
+
+    # Remove o prefixo data:image/jpeg;base64,
+    image_data = image_data.split(',')[1]
+
+    # Decodifica a imagem
+    img_bytes = base64.b64decode(image_data)
+    nparr = np.frombuffer(img_bytes, np.uint8)
+    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    # Aqui você pode salvar ou processar a imagem (ex: detecção facial)
+    foto_path = os.path.join(folder_path, f"{str(student_id)}_{position}.jpg")
+    # cv2.imwrite(foto_path, frame)
+
+    thread = Thread(target=salvar_foto_em_thread, args=(frame.copy(), foto_path, foto_count))
+    thread.start()
+    threads.append(thread)
+    # # Exemplo: salvar no disco
+    # filename = f"{student_id}_{student_name.replace(' ', '_')}.jpg"
+    # capture_path = "capturas"
+    # os.makedirs(capture_path, exist_ok=True)
+    # ret = cv2.imwrite(f"capturas/{filename}", frame)
+    # print(ret)
+
+    return jsonify({"status": "success", "message": "Imagem recebida e salva com sucesso."})
 
 if __name__ == '__main__':
 
-    app.run(host='0.0.0.0', port=5001, debug=False)
+    # app.run(host='0.0.0.0',
+    #         ssl_context='adhoc', 
+    #         port=5003,
+    #         debug=False)
+     app.run(host='localhost', port=5003, debug=False)
+   
    
