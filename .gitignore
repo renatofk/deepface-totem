@@ -2,7 +2,6 @@
 **/.DS_Store
 build/
 dist/
-Pipfile
 Pipfile.lock
 .mypy_cache/
 .idea/
