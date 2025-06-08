@@ -18,7 +18,7 @@ photobase_path = "photobase"
 # threshold = 4
 model_name = "Dlib"
 detector_backend = "yolov11n"
-threshold = 0.50
+threshold = 0.45
 
 # Carregar modelo
 print("Carregando modelo...")
@@ -258,7 +258,7 @@ def compare_face(face_img_path):
                     last_detected = name
                     last_detection_time = time.time()
 
-                    playsound("camera-click.mp3")
+                    # playsound("camera-click.mp3")
                     only_name = name.split("-")[1] if "-" in name else name
                     engine.say(f"Olá {only_name}!")
                     engine.runAndWait()
