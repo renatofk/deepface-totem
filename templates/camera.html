@@ -176,6 +176,20 @@ function isImageTooDark(imageMat, threshold = 50) {
   return mean[0] < threshold;
 }
 
+function removeEmbeddings() {
+  fetch('http://localhost:5003/update_embeddings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      student_id: studentId
+    })
+  }).then(res => {
+    console.log(`Embeddings removidas com sucesso! Student ID: ${studentId}`);
+  }).catch(err => {
+    console.error('Erro ao remover embeddings:', err);
+  });
+}
+
 // Função para capturar a região e enviar
 function captureAndSend(position, box) {
   const [x1, y1, x2, y2] = box;
@@ -248,10 +262,16 @@ async function setupCamera() {
 }
 
 async function main() {
+  ret = confirm("Esse processo substituirá os rostos gravados anteriormente. Deseja realmente iniciar a captura?");
+  if (ret === false) {
+    return;
+  }
+  document.getElementById('startBtn').style.display = 'none';
   await setupCamera();
   video.play();
   model = await blazeface.load();
   requestAnimationFrame(processFrame);
+  removeEmbeddings();
 }
 
 let lastPredictions = [];
@@ -420,7 +440,6 @@ finalizarBtn.addEventListener('click', async () => {
 
 
 document.getElementById('startBtn').addEventListener('click', () => {
-    document.getElementById('startBtn').style.display = 'none';
     main();
 });
 </script>

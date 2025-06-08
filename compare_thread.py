@@ -6,7 +6,11 @@ import threading
 import time
 from flask import Flask, render_template_string, Response, jsonify, request, render_template
 from datetime import datetime
-import re
+import pyttsx3
+from playsound import playsound
+
+from pymilvus import connections, Collection
+
 
 # Configurações
 photobase_path = "photobase"
@@ -14,7 +18,7 @@ photobase_path = "photobase"
 # threshold = 4
 model_name = "Dlib"
 detector_backend = "yolov11n"
-threshold = 0.45
+threshold = 0.50
 
 # Carregar modelo
 print("Carregando modelo...")
@@ -27,28 +31,131 @@ time_by_person = {}
 original_people = set()
 video_capture = None
 
+# Acesso do Zilliz Cloud:
+zilliz_uri = "https://in03-729fdb949596dbe.serverless.gcp-us-west1.cloud.zilliz.com"
+zilliz_token = "de6bc4285f95703df6b754e1440425ce33b76c28de022528b543936d7115dc36145935a8a7cabfada69a2d3ff0f37de5179a6401"
+
+connections.connect(
+    alias="default",
+    uri=zilliz_uri,
+    token=zilliz_token
+    #secure=True  # Habilita TLS
+)
+print("✅ Conectado ao Zilliz Cloud!")
+
+# Definição do esquema da coleção
+collection_name = "student_embeddings"
+collection = Collection(name=collection_name)
+
+engine = pyttsx3.init()
+engine.setProperty('rate', 150)
+
+language_keyword = "brazil"
+for voice in engine.getProperty('voices'):
+    if language_keyword.lower() in voice.name.lower() or language_keyword.lower() in voice.id.lower():
+        # set voice.id
+        engine.setProperty('voice', voice.id)
+
+# class FalaSegura:
+#     def __init__(self):
+#         self.engine = pyttsx3.init()
+#         self.engine.setProperty('rate', 120)
+#         self.engine.setProperty('voice', self._get_voice('brazil'))
+#         # self.fila = queue.Queue()
+#         # self.thread = threading.Thread(target=self._executor, daemon=True)
+#         # self.thread.start()
+
+#     def get_voice(self, language_keyword):
+#         for voice in self.engine.getProperty('voices'):
+#             if language_keyword.lower() in voice.name.lower() or language_keyword.lower() in voice.id.lower():
+#                 return voice.id
+#         return self.engine.getProperty('voice')
+
+#     def _executor(self):
+#         while True:
+#             texto = self
+#             if texto is None:
+#                 break
+#             self.engine.say(texto)
+#             self.engine.runAndWait()
+
+#     def falar(self, texto):
+#         self = texto
+
+#     def parar(self):
+#         self = None
+
+# # ========== Uso ==========
+# fala = FalaSegura()
+
+# engine.say("Bem-vindo ao sistema de reconhecimento facial!")
+# engine.runAndWait()
+
+# def salvar_foto_em_thread(img, path, index):
+#     cv2.imwrite(path, img)
+    # playsound("camera-click.mp3")
+    # falar(f"Foto salva.")
+
+
 def load_embeddings():
     global photo_db, original_people, video_capture
     # Carregar embeddings
     print("Carregando base de dados...")
+    # photo_db = []
+    # original_people = set()
+    # for person in os.listdir(photobase_path):
+    #     person_dir = os.path.join(photobase_path, person)
+    #     if os.path.isdir(person_dir):
+    #         for idx, img_name in enumerate(os.listdir(person_dir)):
+    #             if idx == 0:
+    #                 student_id = int(img_name.split("_")[0])
+    #                 student = str(student_id) + "-" + person
+    #                 original_people.add(student)
+    #                 print(original_people)
+    #             img_path = os.path.join(person_dir, img_name)
+    #             try:
+    #                 embedding = DeepFace.represent(img_path=img_path, model_name=model_name, enforce_detection=False)[0]['embedding']
+    #                 photo_db.append((student, embedding))
+    #             except Exception as e:
+    #                 print(f"[!] Erro ao processar {img_path}: {e}")
+    # print("Base de dados carregada!")
+    # Consultar apenas os alunos da escola Unidade A
+    expr = "school == 'Unidade A'"
+
+    # Campos que queremos buscar
+    output_fields = ["student_id", "student_name", "embedding"]
+
+    # Fazer a busca
+    results = collection.query(
+        expr=expr,
+        output_fields=output_fields
+    )
+
+    # Montar as listas
     photo_db = []
-    original_people = set()
-    for person in os.listdir(photobase_path):
-        person_dir = os.path.join(photobase_path, person)
-        if os.path.isdir(person_dir):
-            for idx, img_name in enumerate(os.listdir(person_dir)):
-                if idx == 0:
-                    student_id = int(img_name.split("_")[0])
-                    student = str(student_id) + "-" + person
-                    original_people.add(student)
-                    print(original_people)
-                img_path = os.path.join(person_dir, img_name)
-                try:
-                    embedding = DeepFace.represent(img_path=img_path, model_name=model_name, enforce_detection=False)[0]['embedding']
-                    photo_db.append((student, embedding))
-                except Exception as e:
-                    print(f"[!] Erro ao processar {img_path}: {e}")
-    print("Base de dados carregada!")
+    original_people = set()  # Usando set para evitar duplicatas
+
+    for r in results:
+        student_id = str(r["student_id"])
+        student_name = r["student_name"]
+        embedding = r["embedding"]  # normalmente é uma lista de floats
+
+        identifier = f"{student_id}-{student_name}"
+        photo_db.append((
+            identifier,
+            embedding
+        ))
+        original_people.add(identifier)
+
+        # # Se preferir lista em vez de set:
+        # original_people = list(original_people)
+
+    # # Converter todos os embeddings do photo_db para numpy arrays
+    # photo_db_embeddings = np.array([np.array(person['embedding']) for person in photo_db])
+
+    # Exemplo de impressão para conferência:
+    print(f"photo_db contém {len(photo_db)} embeddings.")
+    print(f"original_people contém {len(original_people)} alunos únicos.")
 
     # Configuração do vídeo
     print("Iniciando camera...")
@@ -82,10 +189,63 @@ def compare_face(face_img_path):
 
     try:
         print("[*] Comparando rosto...")
-        embedding = DeepFace.represent(img_path=face_img_path, model_name=model_name, enforce_detection=False)[0]['embedding']
+        rt_embedding = DeepFace.represent(img_path=face_img_path, model_name=model_name, enforce_detection=False)[0]['embedding']
         temp_counts = {}
+        
+        # print(f"Embedding do rosto: {rt_embedding}")
+        
+        
+
+        # search_params = {"metric_type": "L2", "params": {"nprobe": 10}}
+        # # IP = Inner Product (cosine similarity); pode usar L2 para Euclidean.
+
+        # top_k = 3  # quantidade de resultados
+        # results = collection.search(
+        #     data=[rt_embedding],    # deve ser uma lista de vetores
+        #     anns_field="embedding",     # nome do campo de vetor
+        #     param=search_params,
+        #     limit=top_k,
+        #     output_fields=["student_id", "student_name"]
+        # )
+        # if not results:
+        #     print("[!] Nenhum resultado encontrado na coleção.")
+        
+        # for hits in results:
+        #     for hit in hits:
+        #         score = hit.score  # quanto maior, mais parecido
+        #         student_id = hit.entity.get("student_id")
+        #         name = hit.entity.get("student_name")
+        #         print(f"ID: {student_id}, Nome: {name}, Similaridade: {score:.4f}")
+
+        #         score = round(score, 2)
+        #         if score < threshold:
+        #             temp_counts[name] = temp_counts.get(name, 0) + 1
+        #             recognition_counts[name] = recognition_counts.get(name, 0) + 1
+        #             print(f"[✓] {name} reconhecido {recognition_counts[name]}x")
+
+        #             if recognition_counts[name] >= 2 and recognition_confirmed != name:
+        #                 print(f"[✔] Rosto confirmado: {name}")
+        #                 recognition_confirmed = name
+        #                 last_detected = name
+        #                 last_detection_time = time.time()
+
+        #                 if name not in recognized_people:
+        #                     recognized_people.append(name)
+        #                     distance_by_person[name] = round(score, 2)
+        #                     time_by_person[name] = datetime.now().strftime("%H:%M:%S")
+        #                     recognition_counts = {}
+        #                     # Save recognized face in history folder
+        #                     historico_path = "history"
+        #                     os.makedirs(historico_path, exist_ok=True)
+        #                     save_path = os.path.join(historico_path, f"{name}.jpg")
+        #                     cv2.imwrite(save_path, cv2.imread(face_img_path))
+
+        #                 return
+
+
         for name, known_embedding in photo_db:
-            distance = np.linalg.norm(np.array(embedding) - np.array(known_embedding))
+            # print(f"Embedding do rosto: {known_embedding}")
+            distance = np.linalg.norm(np.array(rt_embedding) - np.array(known_embedding))
             print(f"-> Comparando com {name}: distância = {distance:.2f}")
             if distance < threshold:
                 temp_counts[name] = temp_counts.get(name, 0) + 1
@@ -97,6 +257,11 @@ def compare_face(face_img_path):
                     recognition_confirmed = name
                     last_detected = name
                     last_detection_time = time.time()
+
+                    playsound("camera-click.mp3")
+                    only_name = name.split("-")[1] if "-" in name else name
+                    engine.say(f"Olá {only_name}!")
+                    engine.runAndWait()
 
                     if name not in recognized_people:
                         recognized_people.append(name)
