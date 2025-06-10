@@ -7,6 +7,7 @@ import time
 from flask import Flask, render_template_string, Response, jsonify, request, render_template
 from datetime import datetime
 import pyttsx3
+import re
 from playsound import playsound
 
 from pymilvus import connections, Collection
@@ -55,6 +56,32 @@ for voice in engine.getProperty('voices'):
     if language_keyword.lower() in voice.name.lower() or language_keyword.lower() in voice.id.lower():
         # set voice.id
         engine.setProperty('voice', voice.id)
+
+def falar_saudacao(student_name):
+    engine = pyttsx3.init()
+    engine.setProperty('rate', 170)  # Ajusta a velocidade da fala
+    engine.setProperty('volume', 1.0)  # Volume máximo (0.0 a 1.0)
+    
+    # Pega a hora atual
+    hora_atual = datetime.now().hour
+    
+    # Determina a saudação
+    if hora_atual < 12:
+        saudacao = f"Bom dia, {student_name}!"
+    else:
+        saudacao = f"Boa tarde, {student_name}!"
+    
+    # Define voz feminina ou masculina se quiser (opcional)
+    voices = engine.getProperty('voices')
+    # Exemplo: pegar a voz feminina (pode variar entre sistemas)
+    for voice in voices:
+        if "female" in voice.name.lower() or "feminina" in voice.name.lower():
+            engine.setProperty('voice', voice.id)
+            break
+
+    # Fala a saudação
+    engine.say(saudacao)
+    engine.runAndWait()        
 
 # class FalaSegura:
 #     def __init__(self):
@@ -258,10 +285,11 @@ def compare_face(face_img_path):
                     last_detected = name
                     last_detection_time = time.time()
 
-                    # playsound("camera-click.mp3")
-                    only_name = name.split("-")[1] if "-" in name else name
-                    engine.say(f"Olá {only_name}!")
-                    engine.runAndWait()
+                    playsound("bom-dia-lua.mp3")
+                    #only_name = name.split("-")[1] if "-" in name else name
+                    #falar_saudacao(only_name)
+                    #engine.say(f"Olá {only_name}!")
+                    #engine.runAndWait()
 
                     if name not in recognized_people:
                         recognized_people.append(name)

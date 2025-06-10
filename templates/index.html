@@ -241,10 +241,23 @@
       });
     }
 
+    function openFullScreen() {
+      const video = document.getElementById('video-feed');
+      if (video.requestFullscreen) {
+        video.requestFullscreen();
+      } else if (video.mozRequestFullScreen) { // Firefox
+        video.mozRequestFullScreen();
+      } else if (video.webkitRequestFullscreen) { // Chrome, Safari and Opera
+        video.webkitRequestFullscreen();
+      } else if (video.msRequestFullscreen) { // IE/Edge
+        video.msRequestFullscreen();
+      }
+    }
+
     function startDetection() {
       fetch('/start').then(() => {
         console.log("Detecção iniciada.");
-        
+        openFullScreen()
         document.getElementById('video-container').style.display = 'block';
         const video = document.getElementById('video-feed');
         video.src = '/video_feed_detection?' + new Date().getTime(); // forçar reload
