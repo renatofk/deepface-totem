@@ -9,6 +9,7 @@ from datetime import datetime
 import pyttsx3
 import re
 from playsound import playsound
+import pygame
 
 from pymilvus import connections, Collection
 
@@ -56,6 +57,14 @@ for voice in engine.getProperty('voices'):
     if language_keyword.lower() in voice.name.lower() or language_keyword.lower() in voice.id.lower():
         # set voice.id
         engine.setProperty('voice', voice.id)
+
+
+def tocar_audio(file_path):
+    pygame.mixer.init()
+    pygame.mixer.music.load(file_path)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        pygame.time.Clock().tick(10)        
 
 def falar_saudacao(student_name):
     engine = pyttsx3.init()
@@ -285,7 +294,7 @@ def compare_face(face_img_path):
                     last_detected = name
                     last_detection_time = time.time()
 
-                    playsound("bom-dia-lua.mp3")
+                    tocar_audio("bom-dia-lua.mp3")
                     #only_name = name.split("-")[1] if "-" in name else name
                     #falar_saudacao(only_name)
                     #engine.say(f"Olá {only_name}!")
