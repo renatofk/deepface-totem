@@ -5,7 +5,8 @@ import numpy as np
 import time
 from threading import Thread
 # import pyttsx3
-from playsound import playsound
+# from playsound import playsound
+import pygame
 import threading
 import queue
 import base64
@@ -110,9 +111,16 @@ except Exception:
 # def falar(texto):
 #     fala.falar(texto)
 
+def tocar_audio(file_path):
+    pygame.mixer.init()
+    pygame.mixer.music.load(file_path)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        pygame.time.Clock().tick(10)   
+
 def salvar_foto_em_thread(img, path, index):
     cv2.imwrite(path, img)
-    playsound("camera-click.mp3")
+    tocar_audio("camera-click.mp3")
     # falar(f"Foto salva.")
 
 def esta_clara(img, limiar=100):
