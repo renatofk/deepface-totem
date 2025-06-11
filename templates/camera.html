@@ -119,12 +119,13 @@
       </div>
     </div>
     
-    
-    <video id="video" playsinline style="display: none;"></video>
-    <div style="position: relative; width: 780px; height: 780px; margin: auto;">
-      <canvas id="canvas" width="780" height="780" style="position: absolute; top: 0; left: 0; z-index: 1;"></canvas>
-      <canvas id="overlay" width="780" height="780" style="position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none;"></canvas>
-      <button id="startBtn">Iniciar Captura</button>
+    <div id="video-container">
+      <video id="video" playsinline style="display: none;"></video>
+      <div style="position: relative; width: 780px; height: 780px; margin: auto;">
+        <canvas id="canvas" width="780" height="780" style="position: absolute; top: 0; left: 0; z-index: 1;"></canvas>
+        <canvas id="overlay" width="780" height="780" style="position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none;"></canvas>
+        <button id="startBtn">Iniciar Captura</button>
+      </div>
     </div>
 
     <div id="controls">
@@ -155,7 +156,7 @@ let lastCaptured = { 'Frente': false, 'Esquerda': false, 'Direita': false };
 const studentId = "{{ student_id }}";
 const studentName = "{{ student_name }}";
 
-function isImageBlurry(imageMat, threshold = 100) {
+function isImageBlurry(imageMat, threshold = 80) {
   const gray = new cv.Mat();
   cv.cvtColor(imageMat, gray, cv.COLOR_RGBA2GRAY, 0);
   const laplacian = new cv.Mat();
@@ -165,6 +166,7 @@ function isImageBlurry(imageMat, threshold = 100) {
   cv.meanStdDev(laplacian, mean, stddev);
   const variance = stddev.doubleAt(0, 0) ** 2;
   gray.delete(); laplacian.delete(); mean.delete(); stddev.delete();
+  console.log("Variância da imagem:", variance);
   return variance < threshold;
 }
 
@@ -432,7 +434,7 @@ retomarBtn.addEventListener('click', () => {
 // Finalizar fotos
 finalizarBtn.addEventListener('click', async () => {
     
-
+    document.getElementById('video-container').style.display = 'none';
     console.log("Processo finalizado com 6 imagens!");
 });
 

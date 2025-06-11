@@ -4,7 +4,7 @@ import os
 import numpy as np
 import time
 from threading import Thread
-import pyttsx3
+# import pyttsx3
 from playsound import playsound
 import threading
 import queue
@@ -15,9 +15,9 @@ from pymilvus import connections, Collection, CollectionSchema, FieldSchema, Dat
 model_name = "Dlib"
 
 app = Flask(__name__)
-engine = pyttsx3.init()
-engine.setProperty('voice', 'brazil')
-engine.setProperty('rate', 120)
+# engine = pyttsx3.init()
+# engine.setProperty('voice', 'brazil')
+# engine.setProperty('rate', 120)
 
 # Variáveis globais
 student_name = ""
@@ -74,46 +74,46 @@ except Exception:
 
 
 
-class FalaThreadSegura:
-    def __init__(self):
-        self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', 120)
-        self.engine.setProperty('voice', self._get_voice('brazil'))
-        self.fila = queue.Queue()
-        self.thread = threading.Thread(target=self._executor, daemon=True)
-        self.thread.start()
+# class FalaThreadSegura:
+#     def __init__(self):
+#         self.engine = pyttsx3.init()
+#         self.engine.setProperty('rate', 120)
+#         self.engine.setProperty('voice', self._get_voice('brazil'))
+#         self.fila = queue.Queue()
+#         self.thread = threading.Thread(target=self._executor, daemon=True)
+#         self.thread.start()
 
-    def _get_voice(self, language_keyword):
-        for voice in self.engine.getProperty('voices'):
-            if language_keyword.lower() in voice.name.lower() or language_keyword.lower() in voice.id.lower():
-                return voice.id
-        return self.engine.getProperty('voice')
+#     def _get_voice(self, language_keyword):
+#         for voice in self.engine.getProperty('voices'):
+#             if language_keyword.lower() in voice.name.lower() or language_keyword.lower() in voice.id.lower():
+#                 return voice.id
+#         return self.engine.getProperty('voice')
 
-    def _executor(self):
-        while True:
-            texto = self.fila.get()
-            if texto is None:
-                break
-            self.engine.say(texto)
-            self.engine.runAndWait()
+#     def _executor(self):
+#         while True:
+#             texto = self.fila.get()
+#             if texto is None:
+#                 break
+#             self.engine.say(texto)
+#             self.engine.runAndWait()
 
-    def falar(self, texto):
-        self.fila.put(texto)
+#     def falar(self, texto):
+#         self.fila.put(texto)
 
-    def parar(self):
-        self.fila.put(None)
-        self.thread.join()
+#     def parar(self):
+#         self.fila.put(None)
+#         self.thread.join()
 
-# ========== Uso ==========
-fala = FalaThreadSegura()
+# # ========== Uso ==========
+# fala = FalaThreadSegura()
 
-def falar(texto):
-    fala.falar(texto)
+# def falar(texto):
+#     fala.falar(texto)
 
 def salvar_foto_em_thread(img, path, index):
     cv2.imwrite(path, img)
     playsound("camera-click.mp3")
-    falar(f"Foto salva.")
+    # falar(f"Foto salva.")
 
 def esta_clara(img, limiar=100):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -179,11 +179,11 @@ def generate_frames(student_id, student_name):
                     if not esta_clara(face_crop):
                         mensagem = "[X] Imagem escura. Melhore a claridade"
                         mensagem_cor = (0, 0, 255)
-                        falar("Imagem escura")
+                        # falar("Imagem escura")
                     elif not esta_nitida(face_crop):
                         mensagem = "[X] Imagem borrada. Mantenha o rosto firme e repita a foto."
                         mensagem_cor = (0, 0, 255)
-                        falar("Imagem borrada")
+                        # falar("Imagem borrada")
                     else:
                         foto_path = os.path.join(user_path, f"{str(student_id)}_{foto_count}.jpg")
                         thread = Thread(target=salvar_foto_em_thread, args=(face_crop.copy(), foto_path, foto_count))
@@ -209,9 +209,9 @@ def generate_frames(student_id, student_name):
 
             desenhar_barra_progresso(frame, min(intervalo_entre_fotos, agora - inicio_rosto_detectado) if inicio_rosto_detectado else 0, intervalo_entre_fotos)
 
-        else:
-           falar("Captura finalizada.")
-           fala.parar()
+        # else:
+        #    falar("Captura finalizada.")
+        #    fala.parar()
 
         cv2.putText(frame, texto, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, cor, 2)
         cv2.putText(frame, f"Fotos: {foto_count}/{total_fotos}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
@@ -344,17 +344,10 @@ def process_frame():
 
     # Aqui você pode salvar ou processar a imagem (ex: detecção facial)
     foto_path = os.path.join(folder_path, f"{str(student_id)}_{position}.jpg")
-    # cv2.imwrite(foto_path, frame)
 
     thread = Thread(target=salvar_foto_em_thread, args=(frame.copy(), foto_path, foto_count))
     thread.start()
     threads.append(thread)
-    # # Exemplo: salvar no disco
-    # filename = f"{student_id}_{student_name.replace(' ', '_')}.jpg"
-    # capture_path = "capturas"
-    # os.makedirs(capture_path, exist_ok=True)
-    # ret = cv2.imwrite(f"capturas/{filename}", frame)
-    # print(ret)
 
     return jsonify({"status": "success", "message": "Imagem recebida e salva com sucesso."})
 
@@ -364,6 +357,6 @@ if __name__ == '__main__':
     #         ssl_context='adhoc', 
     #         port=5003,
     #         debug=False)
-     app.run(host='localhost', port=5003, debug=False)
+    app.run(host='localhost', port=5003, debug=False)
    
    
