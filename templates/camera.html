@@ -224,7 +224,7 @@ function captureAndSend(position, box) {
    
   const imageData = faceCanvas.toDataURL('image/jpeg');
 
-  fetch('http://localhost:5003/process_frame', {
+  fetch('https://captura.cantinasemfila.com.br/process_frame', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

@@ -1,3 +1,10 @@
+# Config to capture photos
+
+python -m venv deepface
+source deepface/bin/activate
+python captura.py
+
+
 # deepface
 
 <div align="center">
