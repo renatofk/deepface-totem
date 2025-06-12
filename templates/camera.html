@@ -179,7 +179,7 @@ function isImageTooDark(imageMat, threshold = 50) {
 }
 
 function removeEmbeddings() {
-  fetch('https://cantinasemfila.com.br:5003/update_embeddings', {
+  fetch('https://cantinasemfila.com.br/captura/update_embeddings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
