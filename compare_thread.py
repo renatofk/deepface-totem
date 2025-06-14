@@ -9,10 +9,10 @@ from datetime import datetime
 import pyttsx3
 import re
 from playsound import playsound
-import pygame
+# import pygame
+from TTS.api import TTS
 
 from pymilvus import connections, Collection
-
 
 # Configurações
 photobase_path = "photobase"
@@ -49,88 +49,34 @@ print("✅ Conectado ao Zilliz Cloud!")
 collection_name = "student_embeddings"
 collection = Collection(name=collection_name)
 
-engine = pyttsx3.init()
-engine.setProperty('rate', 150)
 
-language_keyword = "brazil"
-for voice in engine.getProperty('voices'):
-    if language_keyword.lower() in voice.name.lower() or language_keyword.lower() in voice.id.lower():
-        # set voice.id
-        engine.setProperty('voice', voice.id)
+tts = TTS(model_name="tts_models/multilingual/multi-dataset/your_tts", gpu=False)
+print("Modelo TTS carregado!")
 
-
-def tocar_audio(file_path):
-    pygame.mixer.init()
-    pygame.mixer.music.load(file_path)
-    pygame.mixer.music.play()
-    while pygame.mixer.music.get_busy():
-        pygame.time.Clock().tick(10)        
+# def tocar_audio(file_path):
+#     pygame.mixer.init()
+#     pygame.mixer.music.load(file_path)
+#     pygame.mixer.music.play()
+#     while pygame.mixer.music.get_busy():
+#         pygame.time.Clock().tick(10)        
 
 def falar_saudacao(student_name):
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 170)  # Ajusta a velocidade da fala
-    engine.setProperty('volume', 1.0)  # Volume máximo (0.0 a 1.0)
     
     # Pega a hora atual
     hora_atual = datetime.now().hour
     
     # Determina a saudação
     if hora_atual < 12:
-        saudacao = f"Bom dia, {student_name}!"
+        saudacao = f"Bom dia {student_name}!"
     else:
-        saudacao = f"Boa tarde, {student_name}!"
+        saudacao = f"Boa tarde {student_name}!"
     
-    # Define voz feminina ou masculina se quiser (opcional)
-    voices = engine.getProperty('voices')
-    # Exemplo: pegar a voz feminina (pode variar entre sistemas)
-    for voice in voices:
-        if "female" in voice.name.lower() or "feminina" in voice.name.lower():
-            engine.setProperty('voice', voice.id)
-            break
-
-    # Fala a saudação
-    engine.say(saudacao)
-    engine.runAndWait()        
-
-# class FalaSegura:
-#     def __init__(self):
-#         self.engine = pyttsx3.init()
-#         self.engine.setProperty('rate', 120)
-#         self.engine.setProperty('voice', self._get_voice('brazil'))
-#         # self.fila = queue.Queue()
-#         # self.thread = threading.Thread(target=self._executor, daemon=True)
-#         # self.thread.start()
-
-#     def get_voice(self, language_keyword):
-#         for voice in self.engine.getProperty('voices'):
-#             if language_keyword.lower() in voice.name.lower() or language_keyword.lower() in voice.id.lower():
-#                 return voice.id
-#         return self.engine.getProperty('voice')
-
-#     def _executor(self):
-#         while True:
-#             texto = self
-#             if texto is None:
-#                 break
-#             self.engine.say(texto)
-#             self.engine.runAndWait()
-
-#     def falar(self, texto):
-#         self = texto
-
-#     def parar(self):
-#         self = None
-
-# # ========== Uso ==========
-# fala = FalaSegura()
-
-# engine.say("Bem-vindo ao sistema de reconhecimento facial!")
-# engine.runAndWait()
-
-# def salvar_foto_em_thread(img, path, index):
-#     cv2.imwrite(path, img)
-    # playsound("camera-click.mp3")
-    # falar(f"Foto salva.")
+    tts.tts_to_file(text=saudacao, 
+                    file_path="audio_nome.wav",
+                    speaker_wav="bom-dia-lua.wav",
+                    language="pt-br",
+                    speed=1.8)
+    os.system("ffplay -nodisp -autoexit -af 'atempo=1.8' audio_nome.wav")  # no Linux
 
 
 def load_embeddings():
@@ -294,9 +240,9 @@ def compare_face(face_img_path):
                     last_detected = name
                     last_detection_time = time.time()
 
-                    tocar_audio("bom-dia-lua.mp3")
-                    #only_name = name.split("-")[1] if "-" in name else name
-                    #falar_saudacao(only_name)
+                    # tocar_audio("bom-dia-lua.mp3")
+                    only_name = name.split("-")[1] if "-" in name else name
+                    falar_saudacao(only_name)
                     #engine.say(f"Olá {only_name}!")
                     #engine.runAndWait()
 
