@@ -71,11 +71,13 @@ def falar_saudacao(student_name):
     else:
         saudacao = f"Boa tarde {student_name}!"
     
+    print(f"Gerando TTS: {saudacao}")
     tts.tts_to_file(text=saudacao, 
                     file_path="audio_nome.wav",
                     speaker_wav="bom-dia-lua.wav",
-                    language="pt-br",
-                    speed=1.8)
+                    language="pt-br")
+    
+    print("Executando áudio gerado...")
     os.system("ffplay -nodisp -autoexit -af 'atempo=1.8' audio_nome.wav")  # no Linux
 
 
