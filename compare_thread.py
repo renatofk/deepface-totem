@@ -8,7 +8,8 @@ from flask import Flask, render_template_string, Response, jsonify, request, ren
 from datetime import datetime
 import pyttsx3
 import re
-from playsound import playsound
+# from playsound import playsound
+import sounddevice as sd
 # import pygame
 from TTS.api import TTS
 
@@ -72,13 +73,17 @@ def falar_saudacao(student_name):
         saudacao = f"Boa tarde {student_name}!"
     
     print(f"Gerando TTS: {saudacao}")
-    tts.tts_to_file(text=saudacao, 
+    audio = tts.tts(text=saudacao, 
                     file_path="audio_nome.wav",
-                    speaker_wav="bom-dia-lua.wav",
+                    speaker_wav="bom-dia-renato.wav",
                     language="pt-br")
     
     print("Executando áudio gerado...")
-    os.system("ffplay -nodisp -autoexit -af 'atempo=1.8' audio_nome.wav")  # no Linux
+    # os.system("ffplay -nodisp -autoexit -af 'atempo=1.8' audio_nome.wav")  # no Linux
+    # Reproduz diretamente sem salvar no disco
+    sd.play(audio, samplerate=18550)
+    # sd.play(audio)
+    sd.wait()
 
 
 def load_embeddings():
