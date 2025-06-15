@@ -52,6 +52,8 @@ collection = Collection(name=collection_name)
 
 
 tts = TTS(model_name="tts_models/multilingual/multi-dataset/your_tts", gpu=False)
+greetings_path = "greetings"
+os.makedirs(greetings_path, exist_ok=True)
 print("Modelo TTS carregado!")
 
 # def tocar_audio(file_path):
@@ -61,6 +63,31 @@ print("Modelo TTS carregado!")
 #     while pygame.mixer.music.get_busy():
 #         pygame.time.Clock().tick(10)        
 
+def generate_greeting(student_name):
+    
+    # Pega a hora atual
+    hora_atual = datetime.now().hour
+    
+    # Determina a saudação
+    if hora_atual < 12:
+        abrev_text = "dia"
+        saudacao = f"Bom dia {student_name}!"
+    else:
+        abrev_text = "tarde"
+        saudacao = f"Boa tarde {student_name}!"
+
+    # Verifica se o arquivo já existe
+    file_path=f"greetings/{abrev_text}-{student_name}.wav"
+    if os.path.exists(file_path):
+        print(f"Arquivo {file_path} já existe. Não será gerado novamente.")
+        return
+    
+    print(f"Gerando TTS: {saudacao}")
+    tts.tts_to_file(text=saudacao, 
+                    file_path=file_path,
+                    speaker_wav="bom-dia-renato.wav",
+                    language="pt-br")
+
 def falar_saudacao(student_name):
     
     # Pega a hora atual
@@ -68,22 +95,24 @@ def falar_saudacao(student_name):
     
     # Determina a saudação
     if hora_atual < 12:
-        saudacao = f"Bom dia {student_name}!"
+        abrev_text = "dia"
+        
     else:
-        saudacao = f"Boa tarde {student_name}!"
+        abrev_text = "tarde"
     
-    print(f"Gerando TTS: {saudacao}")
-    audio = tts.tts(text=saudacao, 
-                    file_path="audio_nome.wav",
-                    speaker_wav="bom-dia-renato.wav",
-                    language="pt-br")
-    
-    print("Executando áudio gerado...")
-    # os.system("ffplay -nodisp -autoexit -af 'atempo=1.8' audio_nome.wav")  # no Linux
-    # Reproduz diretamente sem salvar no disco
-    sd.play(audio, samplerate=18550)
-    # sd.play(audio)
-    sd.wait()
+    file_path = f"greetings/{abrev_text}-{student_name}.wav"
+    if not os.path.exists(file_path):
+        print(f"Arquivo {file_path} não encontrado. Gerando novamente...")
+        generate_greeting(student_name)
+    else:
+        print("Executando áudio gerado...")
+        os.system(f"ffplay -nodisp -autoexit -af 'atempo=1.8' {file_path}")  # no Linux
+        # Reproduz diretamente sem salvar no disco
+        # sd.play(audio, samplerate=18550)
+        # # sd.play(audio)
+        # sd.wait()
+
+
 
 
 def load_embeddings():
@@ -128,6 +157,8 @@ def load_embeddings():
         student_id = str(r["student_id"])
         student_name = r["student_name"]
         embedding = r["embedding"]  # normalmente é uma lista de floats
+
+        generate_greeting(student_name)
 
         identifier = f"{student_id}-{student_name}"
         photo_db.append((
