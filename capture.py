@@ -362,7 +362,7 @@ def process_frame():
 if __name__ == '__main__':
 
     app.run(host='0.0.0.0',
-            ssl_context='adhoc', 
+            #ssl_context='adhoc', 
             port=5000,
             debug=False)
     # app.run(host='localhost', port=5003, debug=False)
