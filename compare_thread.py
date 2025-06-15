@@ -71,10 +71,10 @@ def generate_greeting(student_name):
     # Determina a saudação
     if hora_atual < 12:
         abrev_text = "dia"
-        saudacao = f"Bom dia {student_name}!"
+        saudacao = f"... Bom dia {student_name}!"
     else:
         abrev_text = "tarde"
-        saudacao = f"Boa tarde {student_name}!"
+        saudacao = f"... Boa tarde {student_name}!"
 
     # Verifica se o arquivo já existe
     file_path=f"greetings/{abrev_text}-{student_name}.wav"
@@ -177,17 +177,17 @@ def load_embeddings():
     print(f"photo_db contém {len(photo_db)} embeddings.")
     print(f"original_people contém {len(original_people)} alunos únicos.")
 
-    # Configuração do vídeo
-    print("Iniciando camera...")
-    video_capture = cv2.VideoCapture(0)
-    # video_capture = cv2.VideoCapture("rtsp://192.168.0.16:1919/h264.sdp", cv2.CAP_FFMPEG)
-    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    if video_capture is None:
+        # Configuração do vídeo
+        print("Iniciando camera...")
+        video_capture = cv2.VideoCapture(0)
+        video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
-    print("Resolução atual:",
-      video_capture.get(cv2.CAP_PROP_FRAME_WIDTH),
-      "x",
-      video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        print("Resolução atual:",
+        video_capture.get(cv2.CAP_PROP_FRAME_WIDTH),
+        "x",
+        video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 load_embeddings()
 
