@@ -12,6 +12,7 @@ import re
 import sounddevice as sd
 # import pygame
 from TTS.api import TTS
+import requests
 
 from pymilvus import connections, Collection
 
@@ -61,7 +62,41 @@ print("Modelo TTS carregado!")
 #     pygame.mixer.music.load(file_path)
 #     pygame.mixer.music.play()
 #     while pygame.mixer.music.get_busy():
-#         pygame.time.Clock().tick(10)        
+#         pygame.time.Clock().tick(10)    
+
+    
+# Thais N - Young Brasilian Female - Voice ID: 5EtawPduB139avoMLQgH
+# ElevenLabs APIkey: sk_d62da77cbe10a5f4d00b7521ab4de64e46f1c9fff0d0300e
+
+def gerar_audio(texto, output_file="output.mp3"):
+    api_key = "sk_d62da77cbe10a5f4d00b7521ab4de64e46f1c9fff0d0300e"
+    voice_id = "PZIBrGsMjLyYasEz50bI"  # Jennifer
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+
+    headers = {
+        "xi-api-key": api_key,
+        "Content-Type": "application/json",
+        "Accept": "audio/mpeg"
+    }
+
+    payload = {
+        "text": texto,
+        "model_id": "eleven_multilingual_v2",  # modelo multilíngue
+        "voice_settings": {
+            "stability": 1.0,
+            "similarity_boost": 1.0,
+        }
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+
+    if response.status_code == 200:
+        with open(output_file, "wb") as f:
+            f.write(response.content)
+        print(f"Áudio salvo em: {output_file}")
+    else:
+        print(f"Erro {response.status_code}: {response.text}")
+
 
 def generate_greeting(student_name):
     
@@ -71,22 +106,25 @@ def generate_greeting(student_name):
     # Determina a saudação
     if hora_atual < 12:
         abrev_text = "dia"
-        saudacao = f"... Bom dia {student_name}!"
+        saudacao = f". Bom dia, {student_name}!"
     else:
         abrev_text = "tarde"
-        saudacao = f"... Boa tarde {student_name}!"
+        saudacao = f". Boa tarde, {student_name}!"
 
     # Verifica se o arquivo já existe
-    file_path=f"greetings/{abrev_text}-{student_name}.wav"
+    file_path=f"greetings/{abrev_text}-{student_name}.mp3"
     if os.path.exists(file_path):
         print(f"Arquivo {file_path} já existe. Não será gerado novamente.")
         return
     
-    print(f"Gerando TTS: {saudacao}")
-    tts.tts_to_file(text=saudacao, 
-                    file_path=file_path,
-                    speaker_wav="bom-dia-renato.wav",
-                    language="pt-br")
+    # Gera o áudio da saudação
+    gerar_audio(saudacao, file_path)
+    
+    # print(f"Gerando TTS: {saudacao}")
+    # tts.tts_to_file(text=saudacao, 
+    #                 file_path=file_path,
+    #                 speaker_wav="boa-tarde-sofia.wav",
+    #                 language="pt-br")
 
 def falar_saudacao(student_name):
     
@@ -100,13 +138,13 @@ def falar_saudacao(student_name):
     else:
         abrev_text = "tarde"
     
-    file_path = f"greetings/{abrev_text}-{student_name}.wav"
+    file_path = f"greetings/{abrev_text}-{student_name}.mp3"
     if not os.path.exists(file_path):
         print(f"Arquivo {file_path} não encontrado. Gerando novamente...")
         generate_greeting(student_name)
     else:
         print("Executando áudio gerado...")
-        os.system(f"ffplay -nodisp -autoexit -af 'atempo=1.8' {file_path}")  # no Linux
+        os.system(f"ffplay -nodisp -autoexit -af 'atempo=0.9' {file_path}")  # no Linux
         # Reproduz diretamente sem salvar no disco
         # sd.play(audio, samplerate=18550)
         # # sd.play(audio)
