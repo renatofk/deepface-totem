@@ -265,10 +265,12 @@ def index():
         return redirect(url_for('camera'))
     return render_template('index.html')
 
-@app.route('/camera')
+@app.route('/camera', methods=['POST'])
 def camera():
-    student_name = request.args.get('student_name')
-    student_id = request.args.get('student_id')
+    # student_name = request.args.get('student_name')
+    # student_id = request.args.get('student_id')
+    student_id = request.form.get('student_id')
+    student_name = request.form.get('student_name')
 
     if not student_name or not student_id:
         return redirect(url_for('index'))
