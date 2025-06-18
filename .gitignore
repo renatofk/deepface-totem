@@ -20,3 +20,6 @@ venv
 photobase/
 photobase_bkp/
 history/
+.env
+greetings/
+temp_face.jpg

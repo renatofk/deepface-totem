@@ -13,6 +13,7 @@ import re
 # import pygame
 # from TTS.api import TTS
 import requests
+import atexit
 
 from pymilvus import connections, Collection
 
@@ -443,6 +444,16 @@ def manual_unmark():
 def reload_embeddings():
     load_embeddings()
     return "OK"
+
+@app.route('/shutdown')
+def shutdown():
+    os.system('/home/user/deepface-totem/shutdown.sh')
+    return "Sistema encerrado"
+
+@atexit.register
+def cleanup():
+    if os.path.exists("/tmp/app_python.pid"):
+        os.remove("/tmp/app_python.pid")
 
 if __name__ == '__main__':
     try:

@@ -180,9 +180,9 @@
   </style>
 </head>
 <body>
-    <header>
+    <!-- <header>
       <img src="/static/logo_fotonutri.jpg" alt="Logo FotoNutri IA">
-    </header>
+    </header> -->
   
     <div id="video-section">
       <div class="column full-width">
@@ -195,7 +195,8 @@
         <div style="text-align: center;">
             <button id="btnStart" onclick="startDetection()">Iniciar Detecção</button>
             <button id="btnStop" onclick="stopDetection()" disabled>Finalizar Detecção</button>
-            <button onclick="reload_embeddings()">Atualizar Base de Fotos e Camera</button>
+            <button id="btnStop" onclick="reload_embeddings()">Atualizar Base de Fotos e Camera</button>
+            <button onclick="confirmShutdown()">Fechar Sistema</button>
         </div>
         
       </div>
@@ -219,6 +220,12 @@
   <script>
     let selectedName = null;
     let intervalId = null;
+
+    function confirmShutdown() {
+        if (confirm('Tem certeza que deseja fechar o sistema?')) {
+            window.location.href = '/shutdown';
+        }
+    }
 
     function fetchStatus() {
       fetch('/status').then(res => res.json()).then(data => {
@@ -337,12 +344,12 @@
             };
         });
 
-        fetch('http://127.0.0.1:8000/api/registrar-presencas/', {
+        fetch('https://portal.cantinasemfila.com.br/api/registrar-presencas/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        mode: "no-cors", // NÃO RECOMENDADO PARA PRODUÇÃO
+        // mode: "no-cors", // NÃO RECOMENDADO PARA PRODUÇÃO
         body: JSON.stringify(presencas)
         })
         .then(resp => {
