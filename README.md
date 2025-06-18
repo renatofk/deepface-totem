@@ -2,8 +2,14 @@
 
 python -m venv deepface
 source deepface/bin/activate
-python captura.py
+python capture.py
 
+# Deploy 
+
+git pull in /root/deepface
+sudo systemctl restart capture
+
+obs: service was created in /etc/systemd/system/capture.service
 
 # deepface
 
