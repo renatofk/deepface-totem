@@ -2,7 +2,8 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>FotoNutri IA</title>
+  <title>Cantina Sem Fila</title>
+  <meta name="description" content="Sistema de reconhecimento facial para controle de presença em cantinas escolares.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 
@@ -259,7 +260,18 @@
       } else if (video.msRequestFullscreen) { // IE/Edge
         video.msRequestFullscreen();
       }
+      // Sair da tela cheia ao clicar ou dar duplo clique
+      const sairTelaCheia = () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          video.requestFullscreen();
+        }
+      };
+  
+      video.addEventListener("dblclick", sairTelaCheia);
     }
+
 
     function startDetection() {
       fetch('/start').then(() => {
