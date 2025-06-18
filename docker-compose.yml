@@ -1,7 +1,0 @@
-services:
-  web:
-    build: .
-    container_name: flask-web
-    ports:
-      - "5000:5000"
-    restart: always
