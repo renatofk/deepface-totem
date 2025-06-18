@@ -9,9 +9,9 @@ from datetime import datetime
 import pyttsx3
 import re
 # from playsound import playsound
-import sounddevice as sd
+# import sounddevice as sd
 # import pygame
-from TTS.api import TTS
+# from TTS.api import TTS
 import requests
 
 from pymilvus import connections, Collection
@@ -36,8 +36,8 @@ original_people = set()
 video_capture = None
 
 # Acesso do Zilliz Cloud:
-zilliz_uri = "https://in03-729fdb949596dbe.serverless.gcp-us-west1.cloud.zilliz.com"
-zilliz_token = "de6bc4285f95703df6b754e1440425ce33b76c28de022528b543936d7115dc36145935a8a7cabfada69a2d3ff0f37de5179a6401"
+zilliz_uri = os.environ["ZILLIZ_URI"]
+zilliz_token = os.environ["ZILLIZ_TOKEN"]
 
 connections.connect(
     alias="default",
@@ -52,7 +52,7 @@ collection_name = "student_embeddings"
 collection = Collection(name=collection_name)
 
 
-tts = TTS(model_name="tts_models/multilingual/multi-dataset/your_tts", gpu=False)
+# tts = TTS(model_name="tts_models/multilingual/multi-dataset/your_tts", gpu=False)
 greetings_path = "greetings"
 os.makedirs(greetings_path, exist_ok=True)
 print("Modelo TTS carregado!")
@@ -66,10 +66,9 @@ print("Modelo TTS carregado!")
 
     
 # Thais N - Young Brasilian Female - Voice ID: 5EtawPduB139avoMLQgH
-# ElevenLabs APIkey: sk_d62da77cbe10a5f4d00b7521ab4de64e46f1c9fff0d0300e
 
 def gerar_audio(texto, output_file="output.mp3"):
-    api_key = "sk_d62da77cbe10a5f4d00b7521ab4de64e46f1c9fff0d0300e"
+    api_key = os.environ.get("ELEVENLABS_API_KEY", "")
     voice_id = "PZIBrGsMjLyYasEz50bI"  # Jennifer
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
@@ -447,6 +446,6 @@ def reload_embeddings():
 
 if __name__ == '__main__':
     try:
-        app.run(host='0.0.0.0', port=5006, debug=False)
+        app.run(host='0.0.0.0', port=6000, debug=False)
     finally:
         video_capture.release()
