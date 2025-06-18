@@ -1,26 +1,39 @@
-FROM python:3.12-slim
+FROM python:3.12-slim-bookworm
 
-# Instala dependências do sistema
+# Instale dependências do sistema para bibliotecas nativas
 RUN apt-get update && apt-get install -y \
     build-essential \
-    libglib2.0-0 \
+    cmake \
+    ffmpeg \
     libsm6 \
-    libxrender1 \
     libxext6 \
     libgl1-mesa-glx \
-    && rm -rf /var/lib/apt/lists/*
+    libglib2.0-0 \
+    libavdevice-dev \
+    libavfilter-dev \
+    libopus-dev \
+    libvpx-dev \
+    pkg-config \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libavformat-dev \
+    libpq-dev \
+    git \
+    && apt-get clean
 
-# Cria diretório da aplicação
+# Crie diretório de trabalho
 WORKDIR /app
 
-# Copia arquivos
-COPY . .
+# Copie os arquivos do projeto
+COPY . /app
 
-# Instala dependências Python
+# Instale as dependências do Python
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expõe a porta
+# Exponha a porta usada pelo Flask
 EXPOSE 5000
 
-# Comando de execução
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
+# Comando para rodar o app
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
