@@ -1,15 +1,16 @@
-# Config to capture photos
+# Setup totem
 
-python -m venv deepface
-source deepface/bin/activate
-python capture.py
+python -m venv totem
+source totem/bin/activate
+pip install -r requirements.txt
+python compare_embeddings.py
 
 # Deploy 
 
-git pull in /root/deepface
-sudo systemctl restart capture
+git pull in /root/deepface-totem
+source totem/bin/activate
+python compare_embeddings.py
 
-obs: service was created in /etc/systemd/system/capture.service
 
 # deepface
 
