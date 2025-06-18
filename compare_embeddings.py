@@ -446,6 +446,6 @@ def reload_embeddings():
 
 if __name__ == '__main__':
     try:
-        app.run(host='0.0.0.0', port=6000, debug=False)
+        app.run(host='0.0.0.0', port=5050, debug=False)
     finally:
         video_capture.release()
