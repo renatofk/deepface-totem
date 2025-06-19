@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Carregando...</title>
+    <style>
+        body {
+            background-color: #fff;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .logo {
+            max-width: 200px;
+            margin-bottom: 40px;
+        }
+
+        .progress-container {
+            width: 80%;
+            max-width: 500px;
+            height: 20px;
+            background-color: #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            background-color: #00cc66;
+            border-radius: 10px;
+            animation: fillBar 15s linear forwards;
+        }
+
+        @keyframes fillBar {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+    </style>
+     <script>
+        // Redireciona após 15 segundos
+        setTimeout(function() {
+            window.location.href = "http://127.0.0.1:5050";
+        }, 15000);
+    </script>
+</head>
+<body>
+    <!-- Substitua pelo caminho correto do seu logo -->
+    <img src="../static/logo.jpg" alt="Logo do App" class="logo">
+
+    <div class="progress-container">
+        <div class="progress-bar"></div>
+    </div>
+</body>
+</html>
