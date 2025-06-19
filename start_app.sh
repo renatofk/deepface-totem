@@ -15,4 +15,4 @@ else
 fi
 
 # Abre o navegador
-chromium-browser --kiosk /home/user/Dev/deepface-totem/template/splash.html
+chromium-browser --kiosk /home/user/Dev/deepface-totem/templates/splash.html
