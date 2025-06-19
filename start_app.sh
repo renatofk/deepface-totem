@@ -11,7 +11,7 @@ else
     # Inicia e salva o PID
     python /home/user/Dev/deepface-totem/compare_embeddings.py &
     echo $! > $PID_FILE
-    sleep 15
+    
 fi
 
 # Abre o navegador
