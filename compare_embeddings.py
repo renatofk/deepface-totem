@@ -447,7 +447,7 @@ def reload_embeddings():
 
 @app.route('/shutdown')
 def shutdown():
-    os.system('/home/user/deepface-totem/shutdown.sh')
+    os.system('/home/user/Dev/deepface-totem/shutdown.sh')
     return "Sistema encerrado"
 
 @atexit.register
