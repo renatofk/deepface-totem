@@ -360,7 +360,7 @@ def gen():
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
         for (x, y, w, h) in faces:
-            if w > 100 or h > 100:  # Ignorar rostos pequenos (muito distantes)
+            if w > 200 or h > 200:  # Ignorar rostos pequenos (muito distantes)
                 face_crop = frame[y:y+h, x:x+w]
                 cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
