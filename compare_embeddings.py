@@ -360,27 +360,28 @@ def gen():
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
         for (x, y, w, h) in faces:
-            face_crop = frame[y:y+h, x:x+w]
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            if w > 100 or h > 100:  # Ignorar rostos pequenos (muito distantes)
+                face_crop = frame[y:y+h, x:x+w]
+                cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
-            if time.time() - last_detection_time < 3:
-                elapsed = time.time() - last_detection_time
-                progress = min(int((elapsed / 2.0) * 300), 300)
-                cv2.putText(frame, f"{last_detected}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-                cv2.rectangle(frame, (x, y + h + 10), (x + progress, y + h + 30), (255, 255, 0), -1)
-                cv2.rectangle(frame, (x, y + h + 10), (x + 300, y + h + 30), (200, 200, 200), 2)
+                if time.time() - last_detection_time < 3:
+                    elapsed = time.time() - last_detection_time
+                    progress = min(int((elapsed / 2.0) * 300), 300)
+                    cv2.putText(frame, f"{last_detected}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                    cv2.rectangle(frame, (x, y + h + 10), (x + progress, y + h + 30), (255, 255, 0), -1)
+                    cv2.rectangle(frame, (x, y + h + 10), (x + 300, y + h + 30), (200, 200, 200), 2)
 
-            if not compare_event.is_set():
-                if face_crop is not None and face_crop.size > 0 and face_crop.shape[0] >= 120 and face_crop.shape[1] >= 120:
-                    compare_event.set()
-                    face_img_path = "temp_face.jpg"
-                    if cv2.imwrite(face_img_path, face_crop):
-                        threading.Thread(target=compare_face, args=(face_img_path,)).start()
+                if not compare_event.is_set():
+                    if face_crop is not None and face_crop.size > 0 and face_crop.shape[0] >= 120 and face_crop.shape[1] >= 120:
+                        compare_event.set()
+                        face_img_path = "temp_face.jpg"
+                        if cv2.imwrite(face_img_path, face_crop):
+                            threading.Thread(target=compare_face, args=(face_img_path,)).start()
+                        else:
+                            print("[!] Falha ao salvar face_crop.")
+                            compare_event.clear()
                     else:
-                        print("[!] Falha ao salvar face_crop.")
-                        compare_event.clear()
-                else:
-                    print("[!] Face crop inválida ou muito pequena.")
+                        print("[!] Face crop inválida ou muito pequena.")
 
         _, jpeg = cv2.imencode('.jpg', frame)
         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
