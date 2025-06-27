@@ -154,7 +154,8 @@ def falar_saudacao(student_name):
 
 
 def load_embeddings():
-    global photo_db, original_people, video_capture
+    global photo_db, original_people, video_capture, recognized_people
+    recognized_people = []
     # Carregar embeddings
     print("Carregando base de dados...")
     # photo_db = []
@@ -459,5 +460,6 @@ def cleanup():
 if __name__ == '__main__':
     try:
         app.run(host='0.0.0.0', port=5050, debug=False)
+        #app.run(host='localhost', port=5050, debug=False)
     finally:
         video_capture.release()

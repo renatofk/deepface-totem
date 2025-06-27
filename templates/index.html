@@ -196,7 +196,7 @@
         <div style="text-align: center;">
             <button id="btnStart" onclick="startDetection()">Iniciar Detecção</button>
             <button id="btnStop" onclick="stopDetection()" disabled>Finalizar Detecção</button>
-            <button id="btnStop" onclick="reload_embeddings()">Atualizar Base de Fotos e Camera</button>
+            <button id="btnUpdateDB" onclick="reload_embeddings()">Atualizar Base de Fotos e Camera</button>
             <button onclick="confirmShutdown()">Fechar Sistema</button>
         </div>
         
@@ -214,17 +214,23 @@
         <h2>Presenças</h2>
         <ul id="recognizedList" onclick="selectName(event, 'recognizedList')"></ul>
         <button onclick="unmarkManualPresence()">Desmarcar Presença</button>
-        <button onclick="savePresenceList()">Salvar lista de presença</button>
+        <button id="btnSave" onclick="savePresenceList()">Salvar lista de presença</button>
       </div>
     </div>
 
   <script>
     let selectedName = null;
     let intervalId = null;
+    let dataSaved = true;
 
     function confirmShutdown() {
+        
         if (confirm('Tem certeza que deseja fechar o sistema?')) {
-            window.location.href = '/shutdown';
+            if (dataSaved) {
+                window.location.href = '/shutdown';
+            } else {
+                alert("Dados não salvos. Primeiro salve a lista de presenças.");
+            }
         }
     }
 
@@ -245,6 +251,7 @@
           const li = document.createElement("li");
           li.textContent = `${person.nome} (dist: ${person.distancia}, hora: ${person.hora})`;
           recList.appendChild(li);
+          dataSaved = false; // Reset flag when new data is fetched
         });
       });
     }
@@ -283,6 +290,8 @@
         intervalId = setInterval(fetchStatus, 2000);
         document.getElementById("btnStart").disabled = true;
         document.getElementById("btnStop").disabled = false;
+        document.getElementById("btnSave").disabled = true;
+        document.getElementById("btnUpdateDB").disabled = true;
       });
     }
 
@@ -296,6 +305,8 @@
         intervalId = null;
         document.getElementById("btnStart").disabled = false;
         document.getElementById("btnStop").disabled = true;
+        document.getElementById("btnSave").disabled = false;
+        document.getElementById("btnUpdateDB").disabled = false;
       });
     }
 
@@ -332,9 +343,17 @@
 
     function reload_embeddings() {
         if (confirm("Tem certeza que deseja atualizar a base de fotos? ")) {
-            fetch('/reload_embeddings', { method: 'POST' })
-            .then(() => alert("Base de fotos atualizada com sucesso."))
-            .catch(err => alert("Erro ao atualizar a base de fotos."));
+            if (dataSaved) {
+                fetch('/reload_embeddings', { method: 'POST' })
+                .then(() => 
+                  alert("Base de fotos atualizada com sucesso."),
+                  location.reload()
+                )
+                .catch(err => alert("Erro ao atualizar a base de fotos."));
+            } else {
+                alert("Dados não salvos. Primeiro salve a lista de presenças.");
+            }
+            
         }
     }
 
@@ -356,65 +375,69 @@
             };
         });
 
-        fetch('https://portal.cantinasemfila.com.br/api/registrar-presencas/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        // mode: "no-cors", // NÃO RECOMENDADO PARA PRODUÇÃO
-        body: JSON.stringify(presencas)
-        })
-        .then(resp => {
-        if (!resp.ok) throw new Error("Erro ao salvar presença");
-        return resp.json();
-        })
-        .then(respJson => {
-        alert("Presenças salvas com sucesso!");
-        console.log(respJson);
-        })
-        .catch(err => {
-        console.error(err);
-        alert(JSON.stringify(presencas));
-        });
+        if (confirm("Tem certeza que deseja confirmar as presenças e finalizar o turno? ")) {
+          fetch('https://portal.cantinasemfila.com.br/api/registrar-presencas/', {
+          //fetch('http://localhost:8000/api/registrar-presencas/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            //mode: "no-cors", // NÃO RECOMENDADO PARA PRODUÇÃO
+            body: JSON.stringify(presencas)
+          })
+          // .then(resp => {
+          //   if (!resp.ok) throw new Error("Erro ao salvar presença");
+          //     return resp.json();
+          // })
+          .then(respJson => {
+            alert("Presenças salvas com sucesso!");
+            console.log(respJson);
+            dataSaved = true;
+          })
+          .catch(err => {
+            console.error(err);
+            alert(JSON.stringify(presencas));
+          });
+        }
     }
 
     function gerarDataCompleta(hora) {
-  const [h, m, s] = hora.split(":");
+      const [h, m, s] = hora.split(":");
 
-  // Cria uma data base em UTC
-  const agora = new Date();
+      // Cria uma data base em UTC
+      const agora = new Date();
 
-  // Ajusta a hora fornecida
-  const dataLocal = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  dataLocal.setHours(parseInt(h));
-  dataLocal.setMinutes(parseInt(m));
-  dataLocal.setSeconds(parseInt(s || "0"));
+      // Ajusta a hora fornecida
+      const dataLocal = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      dataLocal.setHours(parseInt(h));
+      dataLocal.setMinutes(parseInt(m));
+      dataLocal.setSeconds(parseInt(s || "0"));
 
-  // Converte de volta para ISO, mas mantendo o fuso de São Paulo
-  const year = dataLocal.getFullYear();
-  const month = String(dataLocal.getMonth() + 1).padStart(2, '0');
-  const day = String(dataLocal.getDate()).padStart(2, '0');
-  const hours = String(dataLocal.getHours()).padStart(2, '0');
-  const minutes = String(dataLocal.getMinutes()).padStart(2, '0');
-  const seconds = String(dataLocal.getSeconds()).padStart(2, '0');
+      // Converte de volta para ISO, mas mantendo o fuso de São Paulo
+      const year = dataLocal.getFullYear();
+      const month = String(dataLocal.getMonth() + 1).padStart(2, '0');
+      const day = String(dataLocal.getDate()).padStart(2, '0');
+      const hours = String(dataLocal.getHours()).padStart(2, '0');
+      const minutes = String(dataLocal.getMinutes()).padStart(2, '0');
+      const seconds = String(dataLocal.getSeconds()).padStart(2, '0');
 
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-}
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    }
 
     function getFormattedDate() {
-    const date = new Date();
+      const date = new Date();
 
-    // Converte para o horário de São Paulo
-    const saoPauloDate = new Date(date.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      // Converte para o horário de São Paulo
+      const saoPauloDate = new Date(date.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
 
-    // Formata para "YYYY-MM-DDTHH:MM:00" (sem milissegundos)
-    const year = saoPauloDate.getFullYear();
-    const month = String(saoPauloDate.getMonth() + 1).padStart(2, '0');
-    const day = String(saoPauloDate.getDate()).padStart(2, '0');
-    const hours = String(saoPauloDate.getHours()).padStart(2, '0');
-    const minutes = String(saoPauloDate.getMinutes()).padStart(2, '0');
+      // Formata para "YYYY-MM-DDTHH:MM:00" (sem milissegundos)
+      const year = saoPauloDate.getFullYear();
+      const month = String(saoPauloDate.getMonth() + 1).padStart(2, '0');
+      const day = String(saoPauloDate.getDate()).padStart(2, '0');
+      const hours = String(saoPauloDate.getHours()).padStart(2, '0');
+      const minutes = String(saoPauloDate.getMinutes()).padStart(2, '0');
 
-    return `${year}-${month}-${day}T${hours}:${minutes}:00`;
+      return `${year}-${month}-${day}T${hours}:${minutes}:00`;
     }
 
 
