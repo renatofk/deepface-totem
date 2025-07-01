@@ -240,6 +240,7 @@
         const recList = document.getElementById("recognizedList");
         notList.innerHTML = "";
         recList.innerHTML = "";
+        dataSaved = true;
 
         data.not_recognized.forEach(name => {
           const li = document.createElement("li");
@@ -251,7 +252,7 @@
           const li = document.createElement("li");
           li.textContent = `${person.nome} (dist: ${person.distancia}, hora: ${person.hora})`;
           recList.appendChild(li);
-          dataSaved = false; // Reset flag when new data is fetched
+          dataSaved = false; // Set dataSaved to false if there are recognized people
         });
       });
     }
