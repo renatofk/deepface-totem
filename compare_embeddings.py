@@ -389,7 +389,8 @@ def gen():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    secret_key = os.getenv("KIOSK_SECRET_KEY")
+    return render_template("index.html", secret_key=secret_key)
 
 @app.route('/status')
 def status():
@@ -440,6 +441,14 @@ def manual_unmark():
     if name and name in recognized_people:
         print(f"Removing {name} from recognized_people")
         recognized_people.remove(name)
+    return "OK"
+
+@app.route('/unmark_all', methods=['POST'])
+def unmark_all():
+    global recognized_people, distance_by_person, time_by_person
+    recognized_people = []
+    distance_by_person = {}
+    time_by_person = {}
     return "OK"
 
 @app.route('/reload_embeddings', methods=['POST'])

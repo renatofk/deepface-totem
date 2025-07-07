@@ -342,6 +342,17 @@
       });
     }
 
+    function unmarkAllPresences() {
+      
+      fetch('/unmark_all', { method: 'POST' })
+      .then(() => {
+        
+        fetchStatus();
+      })
+      .catch(err => alert("Erro ao desmarcar todas as presenças."));
+    }
+ 
+
     function reload_embeddings() {
         if (confirm("Tem certeza que deseja atualizar a base de fotos? ")) {
             if (dataSaved) {
@@ -378,27 +389,26 @@
 
         if (confirm("Tem certeza que deseja confirmar as presenças e finalizar o turno? ")) {
           fetch('https://portal.cantinasemfila.com.br/api/registrar-presencas/', {
-          //fetch('http://localhost:8000/api/registrar-presencas/', {
             method: 'POST',
             headers: {
-                "KIOSK-SECRET_KEY": "IlOv3#bt@Ri0",
-                'Content-Type': 'application/json'
+              "KIOSK-SECRET-KEY": "{{ secret_key }}",
+              "Content-Type": "application/json"
             },
-            //mode: "no-cors", // NÃO RECOMENDADO PARA PRODUÇÃO
             body: JSON.stringify(presencas)
           })
-          // .then(resp => {
-          //   if (!resp.ok) throw new Error("Erro ao salvar presença");
-          //     return resp.json();
-          // })
-          .then(respJson => {
-            alert("Presenças salvas com sucesso!");
-            console.log(respJson);
-            dataSaved = true;
+          .then(response => response.json())
+          .then(data => {
+            console.log("Resposta:", data.status);
+            if (data.status == "ok"){
+
+              alert("Presenças salvas com sucesso!");
+              dataSaved = true;
+              unmarkAllPresences()
+
+            }
           })
-          .catch(err => {
-            console.error(err);
-            alert(JSON.stringify(presencas));
+          .catch(error => {
+            console.error("Erro:", error);
           });
         }
     }
