@@ -128,6 +128,12 @@
       opacity: 0.7;
     }
 
+    button#btnSetup {
+      background-color: #999;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
     p {
       margin: 5px 0;
       font-size: 14px;
@@ -197,6 +203,7 @@
             <button id="btnStart" onclick="startDetection()">Iniciar Detecção</button>
             <button id="btnStop" onclick="stopDetection()" disabled>Finalizar Detecção</button>
             <button id="btnUpdateDB" onclick="reload_embeddings()">Atualizar Base de Fotos e Camera</button>
+            <button id="btnSetup" onclick="confirmSetup()">Setup</button>
             <button onclick="confirmShutdown()">Fechar Sistema</button>
         </div>
         
@@ -234,6 +241,17 @@
         }
     }
 
+    function confirmSetup() {
+        
+        if (confirm('Tem certeza que deseja encerrar o sistema e entrar no modo configuração?')) {
+            if (dataSaved) {
+                window.location.href = '/setup';
+            } else {
+                alert("Dados não salvos. Primeiro salve a lista de presenças.");
+            }
+        }
+    }
+
     function fetchStatus() {
       fetch('/status').then(res => res.json()).then(data => {
         const notList = document.getElementById("notRecognizedList");
@@ -259,6 +277,16 @@
 
     function openFullScreen() {
       const video = document.getElementById('video-feed');
+      const container = document.getElementById('video-container');
+        // Adiciona os estilos CSS
+      container.style.width = "100vw";
+      container.style.height = "100vh";
+      container.style.position = "fixed";
+      container.style.top = "0";
+      container.style.left = "0";
+      container.style.zIndex = "1000";
+      container.style.objectFit = "cover";
+
       if (video.requestFullscreen) {
         video.requestFullscreen();
       } else if (video.mozRequestFullScreen) { // Firefox
@@ -271,6 +299,10 @@
       // Sair da tela cheia ao clicar ou dar duplo clique
       const sairTelaCheia = () => {
         if (document.fullscreenElement) {
+          container.style.width = "";
+          container.style.height = "";
+          container.style.objectFit = "";
+          container.style.position = "";
           document.exitFullscreen();
         } else {
           video.requestFullscreen();
@@ -453,7 +485,8 @@
     }
 
 
-    fetchStatus()
+    //fetchStatus();
+    startDetection();
   </script>
 </body>
 </html>

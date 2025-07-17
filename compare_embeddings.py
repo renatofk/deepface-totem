@@ -459,7 +459,12 @@ def reload_embeddings():
 @app.route('/shutdown')
 def shutdown():
     os.system('/home/user/Dev/deepface-totem/shutdown.sh')
-    return "Sistema encerrado"
+    return "Sistema encerrado e desligar"
+
+@app.route('/setup')
+def setup():
+    os.system('/home/user/Dev/deepface-totem/setup.sh')
+    return "Sistema encerrado e entrando no modo configuração"
 
 @atexit.register
 def cleanup():
