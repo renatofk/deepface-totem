@@ -486,7 +486,9 @@
 
 
     //fetchStatus();
-    startDetection();
+    if (navigator.onLine) {
+      startDetection();
+    }
   </script>
 </body>
 </html>

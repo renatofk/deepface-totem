@@ -35,28 +35,35 @@ distance_by_person = {}
 time_by_person = {}
 original_people = set()
 video_capture = None
-
+is_connected = False
+    
 # Acesso do Zilliz Cloud:
 zilliz_uri = os.environ["ZILLIZ_URI"]
 zilliz_token = os.environ["ZILLIZ_TOKEN"]
 
-connections.connect(
-    alias="default",
-    uri=zilliz_uri,
-    token=zilliz_token
-    #secure=True  # Habilita TLS
-)
-print("✅ Conectado ao Zilliz Cloud!")
+try:
+    connections.connect(
+        alias="default",
+        uri=zilliz_uri,
+        token=zilliz_token
+        #secure=True  # Habilita TLS
+    )
+    print("✅ Conectado ao Zilliz Cloud!")
 
-# Definição do esquema da coleção
-collection_name = "student_embeddings"
-collection = Collection(name=collection_name)
+    # Definição do esquema da coleção
+    collection_name = "student_embeddings"
+    collection = Collection(name=collection_name)
 
 
-# tts = TTS(model_name="tts_models/multilingual/multi-dataset/your_tts", gpu=False)
-greetings_path = "greetings"
-os.makedirs(greetings_path, exist_ok=True)
-print("Modelo TTS carregado!")
+    # tts = TTS(model_name="tts_models/multilingual/multi-dataset/your_tts", gpu=False)
+    greetings_path = "greetings"
+    os.makedirs(greetings_path, exist_ok=True)
+    print("Modelo TTS carregado!")
+
+    is_connected = True
+except :
+    print("❌ Erro ao conectar ao Zilliz Cloud. Verifique as variáveis de ambiente ZILLIZ_URI e ZILLIZ_TOKEN.")
+    is_connected = False
 
 # def tocar_audio(file_path):
 #     pygame.mixer.init()
@@ -228,7 +235,8 @@ def load_embeddings():
         "x",
         video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-load_embeddings()
+if is_connected:
+    load_embeddings()
 
 # Inicializações
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
